@@ -22,7 +22,7 @@ package  countlatancy.task;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import org.apache.samza.metrics.Counter;
 import org.apache.samza.config.Config;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.OutgoingMessageEnvelope;
@@ -43,14 +43,17 @@ public class TestOutput implements StreamTask,InitableTask{
 
     private static SystemStream stream = new SystemStream("kafka",TOPIC_NAME);
 
+    private Counter inputCol;
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector,
             TaskCoordinator coodinator) throws Exception {
         Object msg = envelope.getMessage();
-        System.out.println(msg);
+        //System.out.println(msg);
+        inputCol.inc();
         collector.send(new OutgoingMessageEnvelope(stream, msg));
     }
 
     public void init(Config config, TaskContext task){
+        this.inputCol = task.getMetricsRegistry().newCounter("input-counters", "input-col");
         System.out.println("----------------------------------------------------------------");
         System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
         System.out.println("----------------------------------------------------------------");
