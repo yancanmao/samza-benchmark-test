@@ -1,7 +1,0 @@
-wordcount/system/WordFeed.class
-wordcount/task/WordFeedStreamTask.class
-countlatancy/task/Benchmark.class
-countlatancy/task/TestOutput.class
-wordcount/task/WordCountStreamTask.class
-countlatancy/task/CountLatancy.class
-wordcount/task/WordParserStreamTask.class
