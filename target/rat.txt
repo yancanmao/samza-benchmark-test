@@ -1,0 +1,53 @@
+
+*****************************************************
+Summary
+-------
+Generated at: 2018-01-16T19:14:01-08:00
+Notes: 0
+Binaries: 0
+Archives: 0
+Standards: 16
+
+Apache Licensed: 16
+Generated Documents: 0
+
+JavaDocs are generated and so license header is optional
+Generated files do not required license headers
+
+0 Unknown Licenses
+
+*******************************
+
+Unapproved licenses:
+
+
+*******************************
+
+Archives:
+
+*****************************************************
+  Files with Apache License headers will be marked AL
+  Binary files (which do not require AL headers) will be marked B
+  Compressed archives will be marked A
+  Notices, licenses etc will be marked N
+  AL    src/main/assembly/src.xml
+  AL    src/main/java/wordcount/system/WordFeed.java
+  AL    src/main/java/wordcount/task/WordFeedStreamTask.java
+  AL    src/main/java/wordcount/task/WordParserStreamTask.java
+  AL    src/main/java/wordcount/task/WordCountStreamTask.java
+  AL    src/main/java/countlatancy/task/Benchmark.java.bak
+  AL    src/main/java/countlatancy/task/Benchmark.java
+  AL    src/main/java/countlatancy/task/CountLatancy.java
+  AL    src/main/java/countlatancy/task/TestOutput.java
+  AL    src/main/config/wordcount-parser.properties
+  AL    src/main/config/TestOutput.properties
+  AL    src/main/config/wordcount-count.properties
+  AL    src/main/config/CountLatancy.properties
+  AL    src/main/config/Benchmark.properties
+  AL    src/main/resources/log4j.xml
+  AL    pom.xml
+ 
+*****************************************************
+ Printing headers for files without AL header...
+ 
+ 
