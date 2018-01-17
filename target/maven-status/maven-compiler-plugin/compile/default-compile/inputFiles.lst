@@ -1,0 +1,7 @@
+/root/gauge-samza/src/main/java/wordcount/system/WordFeed.java
+/root/gauge-samza/src/main/java/countlatancy/task/TestOutput.java
+/root/gauge-samza/src/main/java/wordcount/task/WordParserStreamTask.java
+/root/gauge-samza/src/main/java/wordcount/task/WordFeedStreamTask.java
+/root/gauge-samza/src/main/java/wordcount/task/WordCountStreamTask.java
+/root/gauge-samza/src/main/java/countlatancy/task/CountLatancy.java
+/root/gauge-samza/src/main/java/countlatancy/task/Benchmark.java
