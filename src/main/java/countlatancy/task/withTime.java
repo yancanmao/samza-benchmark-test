@@ -27,7 +27,7 @@ class withTime {
   /**
    * The user that viewed the page
    */
-  private final String value;
+  private final String UUid;
   /**
    * A trackingId for the page
    */
@@ -37,13 +37,13 @@ class withTime {
    * 
    */
   withTime(String message) {
-    String[] list = message.split("\\|");
-    value = list[0];
-    time = list[1];
+    String[] list = message.split("\\t");
+    UUid = list[1];
+    time = list[0];
   }
 
-  String getValue() {
-    return value;
+  String getId() {
+    return UUid;
   }
 
   String getTime() {

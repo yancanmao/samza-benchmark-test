@@ -55,19 +55,6 @@ public class SamzaWordCount implements StreamApplication {
     //Function<String, String> mapFn = pageView -> new withTime(pageView).getValue();
 
     pageViews
-        .map((pageView) -> {
-            String[] list = pageView.split("\\|");
-            //System.out.println("Received Message: " + pageView);
-            String[] values = list[0].split(" ");
-            System.out.println("Received Message: " + values[0]);
-            //Map<String, String> parseLine = null;
-            //for (String value : values) {
-                //parseLine.put(value, value);
-            //}
-            //return parseLine;
-            return values[0];
-        })
-        .partitionBy(keyFn)
         .window(Windows.keyedTumblingWindow(keyFn, Duration.ofSeconds(3), () -> 0, (m, prevCount) -> prevCount + 1))
         .sendTo(outputStream);
   }
