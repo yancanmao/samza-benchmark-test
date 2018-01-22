@@ -194,6 +194,7 @@
                     <configuration>
                         <excludes>
                             <exclude>*.patch</exclude>
+                            <exclude>src/main/resources/*.txt</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>*.json</exclude>
                             <exclude>.vagrant/**</exclude>
