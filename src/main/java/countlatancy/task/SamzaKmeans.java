@@ -51,11 +51,12 @@ public class SamzaKmeans implements StreamApplication {
 
     MessageStream<String> tuples = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
-    OutputStream<String, String, Map<Integer, String>> outputStream = graph
-        .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m.getMessage().toString);
+    OutputStream<Void, Map<Integer, String>, Map<Integer, String>> outputStream = graph
+        .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
 
     InputStream stream = null;
     BufferedReader br = null;
+    try{
     String sCurrentLine;
     List<Point> centroids = new ArrayList<>();
     stream = this.getClass().getClassLoader().getResourceAsStream("init-centroids.txt");
@@ -68,6 +69,9 @@ public class SamzaKmeans implements StreamApplication {
             position[i] = Double.valueOf(strs[i]);
         }
         centroids.add(new Point(position));
+    }
+    } catch (IOException e) {
+        e.printStackTrace();
     }
 
     Function<String, String> keyFn = pageView -> pageView;
@@ -161,7 +165,7 @@ public class SamzaKmeans implements StreamApplication {
     Point point = new Point();
     for (Map.Entry<Integer, Point> entry : centroids.list.entrySet()) {  
       // System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-      count = counts.get(entry.getKey());
+      count = centroids.counts.get(entry.getKey());
       point = entry.getValue();
       point.location[0] /= count;
       point.location[1] /= count;

@@ -52,7 +52,7 @@ class Point {
     return this.location;
   }
 
-  String getMinIndex() {
+  int getMinIndex() {
     return this.minIndex;
   }
 
