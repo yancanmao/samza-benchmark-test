@@ -46,6 +46,36 @@ public class SamzaKmeans implements StreamApplication {
   private static final int dimension = 2;
   private static final int centroidsNumber = 96;
 
+private List<Point> loadInitCentroids() {
+    InputStream stream = null;
+    BufferedReader br = null;
+    try{
+      String sCurrentLine;
+      List<Point> centroids = new ArrayList<>();
+      stream = this.getClass().getClassLoader().getResourceAsStream("init-centroids.txt");
+
+      br = new BufferedReader(new InputStreamReader(stream));
+      while ((sCurrentLine = br.readLine()) != null) {
+          String[] strs = sCurrentLine.split(",");
+          double[] position = new double[dimension];
+          for (int i = 0; i < dimension; i++) {
+              position[i] = Double.valueOf(strs[i]);
+          }
+          centroids.add(new Point(position));
+      }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            if (stream != null) stream.close();
+            if (br != null) br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    return centroids;
+}
+
   @Override
   public void init(StreamGraph graph, Config config) {
 
@@ -54,30 +84,11 @@ public class SamzaKmeans implements StreamApplication {
     OutputStream<Void, Map<Integer, String>, Map<Integer, String>> outputStream = graph
         .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
 
-    InputStream stream = null;
-    BufferedReader br = null;
-    try{
-    String sCurrentLine;
-    List<Point> centroids = new ArrayList<>();
-    stream = this.getClass().getClassLoader().getResourceAsStream("init-centroids.txt");
-
-    br = new BufferedReader(new InputStreamReader(stream));
-    while ((sCurrentLine = br.readLine()) != null) {
-        String[] strs = sCurrentLine.split(",");
-        double[] position = new double[dimension];
-        for (int i = 0; i < dimension; i++) {
-            position[i] = Double.valueOf(strs[i]);
-        }
-        centroids.add(new Point(position));
-    }
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-
     Function<String, String> keyFn = pageView -> pageView;
 
     tuples
         .map((tuple) -> {
+            List<Point> centroids = this.loadInitCentroids();
             String[] list = tuple.split("\\|");
             String[] strs = list[0].split("\\t");
             double[] position = new double[dimension];
