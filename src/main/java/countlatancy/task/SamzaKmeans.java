@@ -49,9 +49,9 @@ public class SamzaKmeans implements StreamApplication {
 private List<Point> loadInitCentroids() {
     InputStream stream = null;
     BufferedReader br = null;
+    List<Point> centroids = new ArrayList<>();
     try{
       String sCurrentLine;
-      List<Point> centroids = new ArrayList<>();
       stream = this.getClass().getClassLoader().getResourceAsStream("init-centroids.txt");
 
       br = new BufferedReader(new InputStreamReader(stream));
@@ -81,7 +81,7 @@ private List<Point> loadInitCentroids() {
 
     MessageStream<String> tuples = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
-    OutputStream<Void, Map<Integer, String>, Map<Integer, String>> outputStream = graph
+    OutputStream<Void, String, String> outputStream = graph
         .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
 
     Function<String, String> keyFn = pageView -> pageView;
@@ -166,11 +166,12 @@ private List<Point> loadInitCentroids() {
   /**
    * Format the stats for output to Kafka.
    */
-  private Map<Integer, String> formatOutput(WindowPane<Void, Centroid> centroidWindowPane) {
+  private String formatOutput(WindowPane<Void, Centroid> centroidWindowPane) {
 
     Centroid centroids = centroidWindowPane.getMessage();
 
-    Map<Integer, String> outputPoints = new HashMap<Integer, String>();
+    //Map<Integer, String> outputPoints = new HashMap<Integer, String>();
+    String outputPoints = new String();
 
     Integer count = 0;
     Point point = new Point();
@@ -181,8 +182,9 @@ private List<Point> loadInitCentroids() {
       point.location[0] /= count;
       point.location[1] /= count;
 
-      outputPoints.put(point.minIndex, "("+point.location[0]+", "+point.location[1]+")");
+      outputPoints += point.minIndex +" "+ "("+point.location[0]+", "+point.location[1]+")\n";
     }
+    System.out.println(outputPoints);
     return outputPoints;
   }
 }
