@@ -51,7 +51,7 @@ public class SamzaKmeans implements StreamApplication {
 
     MessageStream<String> tuples = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
-    OutputStream<String, String,WindowPane<String, Centroid>> outputStream = graph
+    OutputStream<String, String, Map<Integer, String>> outputStream = graph
         .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m.getMessage().toString);
 
     InputStream stream = null;
@@ -93,6 +93,7 @@ public class SamzaKmeans implements StreamApplication {
             return new Point(minIndex, testData.location);
         })
         .window(Windows.tumblingWindow(Duration.ofSeconds(3), Centroid::new, new centroidAggregator()))
+        .map(this::formatOutput)
         .sendTo(outputStream);
   }
 
@@ -102,21 +103,9 @@ public class SamzaKmeans implements StreamApplication {
   private static class Centroid {
     Map<Integer, Integer> counts = new HashMap<Integer, Integer>();
     Map<Integer, Point> list = new HashMap<Integer, Point>();
-    // Total stats
-    // int totalEdits = 0;
 
     @Override
     public String toString() {
-      Integer count = 0;
-      Point point = new Point();
-      for (Map.Entry<Integer, Point> entry : list.entrySet()) {  
-        // System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-        count = counts.get(entry.getKey());
-        point = entry.getValue();
-        point.location[0] /= count;
-        point.location[1] /= count;
-        list.put(point.minIndex, point);
-      }
       return list.toString();
     }
   }
@@ -154,8 +143,32 @@ public class SamzaKmeans implements StreamApplication {
       point.location = location;
       centroid.list.put(point.minIndex, point);
       centroid.counts.put(point.minIndex, count);
+      
       return centroid;
     }
+  }
+
+  /**
+   * Format the stats for output to Kafka.
+   */
+  private Map<Integer, String> formatOutput(WindowPane<Void, Centroid> centroidWindowPane) {
+
+    Centroid centroids = centroidWindowPane.getMessage();
+
+    Map<Integer, String> outputPoints = new HashMap<Integer, String>();
+
+    Integer count = 0;
+    Point point = new Point();
+    for (Map.Entry<Integer, Point> entry : centroids.list.entrySet()) {  
+      // System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+      count = counts.get(entry.getKey());
+      point = entry.getValue();
+      point.location[0] /= count;
+      point.location[1] /= count;
+
+      outputPoints.put(point.minIndex, "("+point.location[0]+", "+point.location[1]+")");
+    }
+    return outputPoints;
   }
 }
 
