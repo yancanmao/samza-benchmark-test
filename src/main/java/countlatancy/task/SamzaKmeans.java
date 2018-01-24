@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.*;
+import java.io.*;
 
 // test
 public class SamzaKmeans implements StreamApplication {
@@ -50,11 +51,12 @@ public class SamzaKmeans implements StreamApplication {
 
     MessageStream<String> tuples = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
-    OutputStream<String, String, String> outputStream = graph
-        .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
+    OutputStream<String, String,WindowPane<String, Centroid>> outputStream = graph
+        .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m.getMessage().toString);
 
     InputStream stream = null;
     BufferedReader br = null;
+    String sCurrentLine;
     List<Point> centroids = new ArrayList<>();
     stream = this.getClass().getClassLoader().getResourceAsStream("init-centroids.txt");
 
@@ -68,9 +70,9 @@ public class SamzaKmeans implements StreamApplication {
         centroids.add(new Point(position));
     }
 
-     Function<String, String> keyFn = pageView -> pageView;
+    Function<String, String> keyFn = pageView -> pageView;
 
-    pageViews
+    tuples
         .map((tuple) -> {
             String[] list = tuple.split("\\|");
             String[] strs = list[0].split("\\t");
@@ -90,7 +92,7 @@ public class SamzaKmeans implements StreamApplication {
             }
             return new Point(minIndex, testData.location);
         })
-        .window(Windows.tumblingWindow(Duration.ofSeconds(3), centroids::new, new centroidAggregator()))
+        .window(Windows.tumblingWindow(Duration.ofSeconds(3), Centroid::new, new centroidAggregator()))
         .sendTo(outputStream);
   }
 
@@ -98,8 +100,8 @@ public class SamzaKmeans implements StreamApplication {
    * A few statistics about the incoming messages.
    */
   private static class Centroid {
-    Map<String, Integer> counts = new HashMap<String, Integer>();
-    Map<String, Object> list = new HashMap<String, Object>();
+    Map<Integer, Integer> counts = new HashMap<Integer, Integer>();
+    Map<Integer, Point> list = new HashMap<Integer, Point>();
     // Total stats
     // int totalEdits = 0;
 
@@ -107,7 +109,7 @@ public class SamzaKmeans implements StreamApplication {
     public String toString() {
       Integer count = 0;
       Point point = new Point();
-      for (Map.Entry<Integer, Object> entry : list.entrySet()) {  
+      for (Map.Entry<Integer, Point> entry : list.entrySet()) {  
         // System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
         count = counts.get(entry.getKey());
         point = entry.getValue();
@@ -119,7 +121,7 @@ public class SamzaKmeans implements StreamApplication {
     }
   }
 
-  private class centroidAggregator implements FoldLeftFunction<Object, Centroid> {
+  private class centroidAggregator implements FoldLeftFunction<Point, Centroid> {
 
     // private KeyValueStore<String, Integer> store;
 
@@ -137,8 +139,7 @@ public class SamzaKmeans implements StreamApplication {
       // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
     }
 
-    @Override
-    public WikipediaStats apply(Point point, Centroid centroid) {
+    public Centroid apply(Point point, Centroid centroid) {
       Integer count = centroid.counts.get(point.minIndex);
       Point storedPoint = centroid.list.get(point.minIndex);
       if (count == null) {
