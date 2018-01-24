@@ -184,7 +184,6 @@ private List<Point> loadInitCentroids() {
 
       outputPoints += point.minIndex +" "+ "("+point.location[0]+", "+point.location[1]+")\n";
     }
-    System.out.println(outputPoints);
     return outputPoints;
   }
 }
