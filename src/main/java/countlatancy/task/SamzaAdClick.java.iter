@@ -36,46 +36,33 @@ import java.util.function.Function;
 public class SamzaAdClick implements StreamApplication {
 
   // private static final Logger LOG = LoggerFactory.getLogger(PageViewAdClickJoiner.class);
-  private static final String INPUT_TOPIC1 = "Advertisement";
-  private static final String INPUT_TOPIC2 = "AdvClick";
+  private static final String INPUT_TOPIC1 = "wikipedia-raw";
+  //private static final String INPUT_TOPIC2 = "test";
 
-  private static final String OUTPUT_TOPIC = "SamzaAdClick";
+  private static final String OUTPUT_TOPIC = "SamzaAdvClick";
 
   @Override
   public void init(StreamGraph graph, Config config) {
 
     MessageStream<String> advertisement = graph.<String, String, String>getInputStream(INPUT_TOPIC1, (k, v) -> v);
-    MessageStream<String> adClicks = graph.<String, String, String>getInputStream(INPUT_TOPIC2, (k, v) -> v);
+    //MessageStream<String> advClicks = graph.<String, String, String>getInputStream(INPUT_TOPIC2, (k, v) -> v);
 
     OutputStream<String, String, String> outputStream = graph
         .getOutputStream(OUTPUT_TOPIC, m -> "", m -> m);
+    OutputStream<String, String, String> outputStream2 = graph
+        .getOutputStream(INPUT_TOPIC1, m -> "", m -> m);
 
-    Function<String, String> adKeyFn = adMsg -> new withTime(adMsg).getId();
-    Function<String, String> adClickKeyFn = adClick -> new withTime(adClick).getId();
+    // Function<String, String> pageViewKeyFn = pageView -> new PageView(pageView).getPageId();
+    // Function<String, String> adClickKeyFn = adClick -> new AdClick(adClick).getPageId();
 
-    MessageStream<String> adRepartitioned = advertisement.partitionBy(adKeyFn);
-    MessageStream<String> adClickRepartitioned = adClicks.partitionBy(adClickKeyFn);
+    // MessageStream<String> pageViewRepartitioned = pageViews.partitionBy(pageViewKeyFn);
+    // MessageStream<String> adClickRepartitioned = adClicks.partitionBy(adClickKeyFn);
 
-    adRepartitioned.join(adClickRepartitioned, new JoinFunction<String, String, String, String>() {
-    //advertisement.join(adClicks, new JoinFunction<String, String, String, String>() {
-
-      @Override
-      public String apply(String advertisementMsg, String adClickMsg) {
-        withTime advertisement = new withTime(advertisementMsg);
-        withTime adClick = new withTime(adClickMsg);
-        String joinResult = String.format("%s,%s,%s", advertisement.getId(), advertisement.getTime(), adClick.getTime());
-        return joinResult;
-      }
-
-      @Override
-      public String getFirstKey(String msg) {
-        return new withTime(msg).getId();
-      }
-
-      @Override
-      public String getSecondKey(String msg) {
-        return new withTime(msg).getId();
-      }
-    }, Duration.ofMinutes(3)).sendTo(outputStream);
+    advertisement.sendTo(outputStream);
+    advertisement
+        .map((value) -> {
+            return "hhhhhhhhhh";
+        })
+        .sendTo(outputStream2);
   }
 }
