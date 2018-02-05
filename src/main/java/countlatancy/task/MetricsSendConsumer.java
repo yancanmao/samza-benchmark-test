@@ -33,14 +33,14 @@ import java.util.concurrent.Executors;
  * 消费者例子.
  *
  */
-public class ConsumerExample {
+public class MetricsSendConsumer {
 	private final KafkaConsumer<String,String> consumer;
 	private final String topic;
 	private ExecutorService executor;
 	private long delay;
 
 
-	public ConsumerExample(Properties props, String topic) {
+	public MetricsSendConsumer(Properties props, String topic) {
 		consumer = new KafkaConsumer<>(props);
 		this.topic = topic;
 	}
@@ -97,7 +97,7 @@ public class ConsumerExample {
 		// String groupId = args[1];
 		String topic = args[1];
 		Properties props = createConsumerConfig(brokers);
-		ConsumerExample example = new ConsumerExample(props, topic);
+		MetricsSendConsumer example = new MetricsSendConsumer(props, topic);
 		example.run();
 
 		Thread.sleep(60*1000);
