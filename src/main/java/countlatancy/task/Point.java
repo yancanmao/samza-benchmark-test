@@ -21,6 +21,7 @@ package countlatancy.task;
 
 /**
  * Author by Mao
+ * kmeans data structure, and some operator
  */
 
 class Point {

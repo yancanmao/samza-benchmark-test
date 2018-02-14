@@ -1,0 +1,160 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package countlatancy.task;
+
+import org.apache.samza.application.StreamApplication;
+import org.apache.samza.config.Config;
+import org.apache.samza.operators.MessageStream;
+import org.apache.samza.operators.OutputStream;
+import org.apache.samza.operators.StreamGraph;
+import org.apache.samza.operators.functions.FoldLeftFunction;
+import org.apache.samza.operators.windows.WindowPane;
+import org.apache.samza.operators.windows.Windows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.function.Function;
+import java.util.*;
+
+// test
+public class ShareSBApp implements StreamApplication {
+
+  // private static final Logger LOG = LoggerFactory.getLogger(TumblingPageViewCounterApp.class);
+  private static final String INPUT_TOPIC = "FileToStream";
+  private static final String OUTPUT_TOPIC = "ShareSB";
+  private static final String FILTER_KEY1 = "D";
+  private static final String FILTER_KEY2 = "X";
+  
+  // TODO: transaction
+  public boolean transaction(List<Order> poolB, List<Order> poolS, Order order) {
+      // hava a transaction
+      int i = 0;
+      int j = 0;
+      while (poolS.get(j).getOrderPrice() <= poolB.get(i).getOrderPrice()) {
+          if (poolB.get(i).getOrderVol() > poolS.get(j).getOrderVol()) {
+              poolB.get(i).updateOrder(poolS.get(j).getOrderVol());
+              // poolS.get(j).updateOrder(poolS.get(j).getOrderVol());
+              // remove chengjiao order
+              poolS.remove(j);
+              // TODO: save poolB poolS
+              order.savepool();
+              // TODO: output poolB poolS price etc
+          } else {
+              // poolB.get(i).updateOrder(poolB.get(i).getOrderVol());
+              poolS.get(j).updateOrder(poolB.get(i).getOrderVol());
+              // remove chengjiao order
+              poolB.remove(i);
+              // TODO: save poolB poolS
+              order.savepool();
+              // TODO: output poolB poolS price etc
+          }
+      }
+      // TODO: output some thing
+      return true;
+  }
+
+    @Override
+    public void init(StreamGraph graph, Config config) {
+
+      MessageStream<String> pageViews = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
+
+      OutputStream<String, String, String> outputStream = graph
+          .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
+      //OutputStream<String, String, String> outputStream = graph
+          //.getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
+
+      pageViews
+          .map((tuple)->{
+            // String[] orderList = tuple.split("\\|");
+            Order order = new Order(tuple);
+            return order;
+          })
+          .filter((order) -> order.getTranMaintCode() != 'D')
+          .filter((order) -> order.getTranMaintCode() != 'X')
+          .map((order)->{
+              if (order.getTradeDir() == 'B') {
+                  List<Order> poolS = order.loadPool('S');
+                  float orderPrice = order.getOrderPrice();
+                 
+                  // put into buy poolB
+                  List<Order> poolB = order.loadPool('B');
+                  for (int i = 0; i < poolB.size(); i++) {
+                      if (poolB.get(i).getOrderPrice() < orderPrice) {
+                          poolB.add(i, order);
+                      }
+                      if (i == poolB.size()) {
+                          poolB.add(order);
+                      }
+                  }
+                  // no satisfied price
+                  if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
+                      order.savepool();
+                  } else {
+                      this.transaction(poolB, poolS, order);
+                      // // hava a transaction
+                      // int i = 0;
+                      // int j = 0;
+                      // while (poolS.get(j).getOrderPrice() <= poolB.get(i).getOrderPrice()) {
+                      //     if (poolB.get(i).getOrderVol() > poolS.get(j).getOrderVol()) {
+                      //         poolB.get(i).updateOrder(poolS.get(j).getOrderVol());
+                      //         // poolS.get(j).updateOrder(poolS.get(j).getOrderVol());
+                      //         // remove chengjiao order
+                      //         poolS.remove(j);
+                      //         // TODO: save poolB poolS
+                      //         order.savepool();
+                      //         // TODO: output poolB poolS price etc
+                      //     } else {
+                      //         // poolB.get(i).updateOrder(poolB.get(i).getOrderVol());
+                      //         poolS.get(j).updateOrder(poolB.get(i).getOrderVol());
+                      //         // remove chengjiao order
+                      //         poolB.remove(i);
+                      //         // TODO: save poolB poolS
+                      //         order.savepool();
+                      //         // TODO: output poolB poolS price etc
+                      //     }
+                      // }
+                      // // TODO: output some thing
+                   }
+              } else {
+                  List<Order> poolB = order.loadPool('B');
+                  float orderPrice = order.getOrderPrice();
+
+                  // put into buy poolS
+                  List<Order> poolS = order.loadPool('S');
+                  for (int i = 0; i < poolS.size(); i++) {
+                      if (poolS.get(i).getOrderPrice() > orderPrice) {
+                          poolS.add(i, order);
+                      }
+                      if (i == poolS.size()) {
+                          poolS.add(order);
+                      }
+                  }
+                  // no satisfied price
+                  if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
+                      order.savepool();
+                  } else {
+                      this.transaction(poolB, poolS, order);
+                  }
+          })
+          .sendTo(outputStream);
+    }
+}
+
