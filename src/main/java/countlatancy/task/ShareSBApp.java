@@ -90,6 +90,11 @@ public class ShareSBApp implements StreamApplication {
       BufferedReader br = null;
       String sCurrentLine;
       List<Order> pool = new ArrayList<>();
+      File textFile = new File(file);
+      // if file exists
+      if (!textFile.exists()) {
+          return pool;
+      }
 
       try{
         stream = new FileReader(file);
@@ -144,10 +149,14 @@ public class ShareSBApp implements StreamApplication {
               String complete = new String();
               if (order.getTradeDir() == "B") {
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
-                  float orderPrice = order.getOrderPrice();
-                 
-                  // put into buy poolB
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
+                  // if no elements in poolS or poolB, add poolB
+                  if (poolS.isEmpty() or poolB.isEmpty()) {
+                      poolB.add(order);
+                      return complete;
+                  }
+                  float orderPrice = order.getOrderPrice();
+                  // put into buy poolB
                   for (int i = 0; i < poolB.size(); i++) {
                       if (poolB.get(i).getOrderPrice() < orderPrice) {
                           poolB.add(i, order);
@@ -166,10 +175,14 @@ public class ShareSBApp implements StreamApplication {
                    }
               } else {
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
-                  float orderPrice = order.getOrderPrice();
-
-                  // put into buy poolS
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
+                  // if no elements in poolS or poolB, add poolS
+                  if (poolS.isEmpty() or poolB.isEmpty()) {
+                      poolS.add(order);
+                      return complete;
+                  }
+                  float orderPrice = order.getOrderPrice();
+                  // put into buy poolS
                   for (int i = 0; i < poolS.size(); i++) {
                       if (poolS.get(i).getOrderPrice() > orderPrice) {
                           poolS.add(i, order);
