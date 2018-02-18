@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.*;
+import java.io.*;
 
 // test
 public class ShareSBApp implements StreamApplication {
@@ -78,14 +79,14 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        pool.put(order.getSecCode()+'S', poolS);
-        pool.put(order.getSecCode()+'B', poolB);
+        pool.put(order.getSecCode()+"S", poolS);
+        pool.put(order.getSecCode()+"B", poolB);
         // output complete order
         return messageBuilder.toString();
     }
 
     public List<Order> loadPool(String file) {
-      InputStream stream = null;
+      FileReader stream = null;
       BufferedReader br = null;
       String sCurrentLine;
       List<Order> pool = new ArrayList<>();
@@ -93,7 +94,7 @@ public class ShareSBApp implements StreamApplication {
       try{
         stream = new FileReader(file);
 
-        br = new BufferedReader(new InputStreamReader(stream));
+        br = new BufferedReader(stream);
         while ((sCurrentLine = br.readLine()) != null) {
             pool.add(new Order(sCurrentLine));
         }
@@ -121,7 +122,7 @@ public class ShareSBApp implements StreamApplication {
         // TODO: load pool into mem
         File dirFile = new File("/root/share/opening");
         String[] fileList = dirFile.list();
-        Map<String, ArrayList<Order>> pool = new HashMap<String, ArrayList<Order>>();
+        Map<String, List<Order>> pool = new HashMap<String, List<Order>>();
         for (int i = 0; i < fileList.length; i++) {
           String fileName = fileList[i];
           File file = new File(dirFile.getPath(),fileName);
@@ -137,16 +138,16 @@ public class ShareSBApp implements StreamApplication {
             Order order = new Order(tuple);
             return order;
           })
-          .filter((order) -> order.getTranMaintCode() != 'D')
-          .filter((order) -> order.getTranMaintCode() != 'X')
+          .filter((order) -> order.getTranMaintCode() != "D")
+          .filter((order) -> order.getTranMaintCode() != "X")
           .map((order)->{
-              String complete = '';
-              if (order.getTradeDir() == 'B') {
-                  List<Order> poolS = pool.get(order.getSecCode()+'S');
+              String complete = new String();
+              if (order.getTradeDir() == "B") {
+                  List<Order> poolS = pool.get(order.getSecCode()+"S");
                   float orderPrice = order.getOrderPrice();
                  
                   // put into buy poolB
-                  List<Order> poolB = pool.get(order.getSecCode()+'B');
+                  List<Order> poolB = pool.get(order.getSecCode()+"B");
                   for (int i = 0; i < poolB.size(); i++) {
                       if (poolB.get(i).getOrderPrice() < orderPrice) {
                           poolB.add(i, order);
@@ -158,17 +159,17 @@ public class ShareSBApp implements StreamApplication {
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // this.savepool();
-                      pool.put(order.getSecCode()+'S', poolS);
-                      pool.put(order.getSecCode()+'B', poolB);
+                      pool.put(order.getSecCode()+"S", poolS);
+                      pool.put(order.getSecCode()+"B", poolB);
                   } else {
                       complete = this.transaction(poolB, poolS, order);
                    }
               } else {
-                  List<Order> poolB = pool.get(order.getSecCode()+'B');
+                  List<Order> poolB = pool.get(order.getSecCode()+"B");
                   float orderPrice = order.getOrderPrice();
 
                   // put into buy poolS
-                  List<Order> poolS = pool.get(order.getSecCode()+'S');
+                  List<Order> poolS = pool.get(order.getSecCode()+"S");
                   for (int i = 0; i < poolS.size(); i++) {
                       if (poolS.get(i).getOrderPrice() > orderPrice) {
                           poolS.add(i, order);
@@ -180,8 +181,8 @@ public class ShareSBApp implements StreamApplication {
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // order.savepool();
-                      pool.put(order.getSecCode()+'S', poolS);
-                      pool.put(order.getSecCode()+'B', poolB);
+                      pool.put(order.getSecCode()+"S", poolS);
+                      pool.put(order.getSecCode()+"B", poolB);
                   } else {
                       complete = this.transaction(poolB, poolS, order);
                   }
