@@ -45,7 +45,7 @@ public class ShareSBApp implements StreamApplication {
     private static final String FILTER_KEY2 = "X";
     
     // TODO: transaction
-    public String transaction(List<Order> poolB, List<Order> poolS, Order order) {
+    public String transaction(List<Order> poolB, List<Order> poolS, Map<String, List<Order>> pool) {
         // hava a transaction
         int i = 0;
         int j = 0;
@@ -162,7 +162,7 @@ public class ShareSBApp implements StreamApplication {
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
                   } else {
-                      complete = this.transaction(poolB, poolS, order);
+                      complete = this.transaction(poolB, poolS, pool);
                    }
               } else {
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
@@ -184,7 +184,7 @@ public class ShareSBApp implements StreamApplication {
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
                   } else {
-                      complete = this.transaction(poolB, poolS, order);
+                      complete = this.transaction(poolB, poolS, pool);
                   }
               }
               return complete;
