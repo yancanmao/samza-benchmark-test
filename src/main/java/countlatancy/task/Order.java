@@ -64,8 +64,9 @@ class Order {
     return this.orderList[Trade_Dir];
   }
 
-  public int updateOrder(int otherOrderVol) {
+  public boolean updateOrder(int otherOrderVol) {
     this.orderList[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
     this.orderList[Order_Exec_Vol] = (this.getOrderVol() + otherOrderVol) + "";
+    return true;
   }
 }
