@@ -47,44 +47,40 @@ public class ShareSBApp implements StreamApplication {
     // TODO: transaction
     public String transaction(List<Order> poolB, List<Order> poolS, Map<String, List<Order>> pool, Order order) {
         // hava a transaction
+        int top = 0;
         int i = 0;
         int j = 0;
-        // create a array to save dealed order to remove
-        List<Integer> indexS = new ArrayList<>();
-        List<Integer> indexB = new ArrayList<>();
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
         // List<Order> completeB = new ArrayList<>();
-        while (poolS.get(j).getOrderPrice() <= poolB.get(i).getOrderPrice()) {
-            if (poolB.get(i).getOrderVol() > poolS.get(j).getOrderVol()) {
-                // B remains i-j
-                poolB.get(i).updateOrder(poolS.get(j).getOrderVol());
+        while (poolS.get(top).getOrderPrice() <= poolB.get(top).getOrderPrice()) {
+            if (poolB.get(top).getOrderVol() > poolS.get(top).getOrderVol()) {
+                // B remains B_top-S_top
+                poolB.get(top).updateOrder(poolS.get(top).getOrderVol());
                 // S complete
-                poolS.get(j).updateOrder(poolS.get(j).getOrderVol());
+                poolS.get(top).updateOrder(poolS.get(top).getOrderVol());
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
-                messageBuilder.append(poolS.get(j).getOrderNo()).append(" ");
-                // add chengjiao order to index
-                indexS.add(j);
-                // poolS.remove(j);
-                if (j == poolS.size()-1) {
+                messageBuilder.append(poolS.get(top).getOrderNo()).append(" ");
+                // remove top of poolS
+                poolS.remove(top);
+                // no order in poolS, transaction over
+                if (poolS.isEmpty()) {
                     break;
                 }
-                j++;
                 // TODO: output poolB poolS price etc
             } else {
-                poolB.get(i).updateOrder(poolB.get(i).getOrderVol());
-                poolS.get(j).updateOrder(poolB.get(i).getOrderVol());
-                // add j to complete list
+                poolB.get(top).updateOrder(poolB.get(top).getOrderVol());
+                poolS.get(top).updateOrder(poolB.get(top).getOrderVol());
+                // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                // add chengjiao order to index
-                indexB.add(i);
-                // poolB.remove(i);
-                if (i == poolB.size()-1) {
+                // remove top of poolB
+                poolB.remove(top);
+                // no order in poolB, transaction over
+                if (poolB.isEmpty()) {
                     break;
                 }
-                i++;
                 // TODO: output poolB poolS price etc
             }
         }
@@ -172,8 +168,8 @@ public class ShareSBApp implements StreamApplication {
               if (order.getTradeDir() == "B") {
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
-                  // if no elements in poolS or poolB, add poolB
-                  if (poolS.isEmpty() || poolB.isEmpty()) {
+                  // if no elements in poolS, no transaction, add poolB
+                  if (poolS.isEmpty()) {
                       poolB.add(order);
                       pool.put(order.getSecCode()+"B", poolB);
                       complete = "no transaction";
@@ -181,15 +177,19 @@ public class ShareSBApp implements StreamApplication {
                   }
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolB
-                  for (int i = 0; i < poolB.size(); i++) {
-                      if (poolB.get(i).getOrderPrice() < orderPrice) {
-                          poolB.add(i, order);
-                          break;
+                  if (!poolB.isEmpty()) {
+                      for (int i = 0; i < poolB.size(); i++) {
+                          if (poolB.get(i).getOrderPrice() < orderPrice) {
+                              poolB.add(i, order);
+                              break;
+                          }
+                          if (i == poolB.size()-1) {
+                              poolB.add(order);
+                              break;
+                          }
                       }
-                      if (i == poolB.size()-1) {
-                          poolB.add(order);
-                          break;
-                      }
+                  } else {
+                      poolB.add(order);
                   }
                   
                   // no satisfied price
@@ -203,8 +203,8 @@ public class ShareSBApp implements StreamApplication {
               } else {
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
-                  // if no elements in poolS or poolB, add poolS
-                  if (poolS.isEmpty() || poolB.isEmpty()) {
+                  // if no elements in poolB, no transaction, add poolS
+                  if (poolB.isEmpty()) {
                       poolS.add(order);
                       pool.put(order.getSecCode()+"S", poolS);
                       complete = "no transaction";
@@ -212,15 +212,19 @@ public class ShareSBApp implements StreamApplication {
                   }
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolS
-                  for (int i = 0; i < poolS.size(); i++) {
-                      if (poolS.get(i).getOrderPrice() > orderPrice) {
-                          poolS.add(i, order);
-                          break;
+                  if (!poolS.isEmpty()) {
+                      for (int i = 0; i < poolS.size(); i++) {
+                          if (poolS.get(i).getOrderPrice() > orderPrice) {
+                              poolS.add(i, order);
+                              break;
+                          }
+                          if (i == poolS.size()-1) {
+                              poolS.add(order);
+                              break;
+                          }
                       }
-                      if (i == poolS.size()-1) {
-                          poolS.add(order);
-                          break;
-                      }
+                  } else {
+                      poolS.add(order);
                   }
                   
                   // no satisfied price
