@@ -49,6 +49,9 @@ public class ShareSBApp implements StreamApplication {
         // hava a transaction
         int i = 0;
         int j = 0;
+        // create a array to save dealed order to remove
+        List<Integer> indexS = new ArrayList<>();
+        List<Integer> indexB = new ArrayList<>();
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
         // List<Order> completeB = new ArrayList<>();
@@ -61,8 +64,12 @@ public class ShareSBApp implements StreamApplication {
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
                 messageBuilder.append(poolS.get(j).getOrderNo()).append(" ");
-                // remove chengjiao order
-                poolS.remove(j);
+                // add chengjiao order to index
+                indexS.add(j);
+                // poolS.remove(j);
+                if (j == poolS.size()-1) {
+                    break;
+                }
                 j++;
                 // TODO: output poolB poolS price etc
             } else {
@@ -71,10 +78,27 @@ public class ShareSBApp implements StreamApplication {
                 // add j to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                // remove chengjiao order
-                poolB.remove(i);
+                // add chengjiao order to index
+                indexB.add(i);
+                // poolB.remove(i);
+                if (i == poolB.size()-1) {
+                    break;
+                }
                 i++;
                 // TODO: output poolB poolS price etc
+            }
+        }
+        // remove dealed order
+        if (!indexS.isEmpty()) {
+            for (int i=0; i<indexS.size(); i++) {
+                curIndex = indexS.get(i);
+                poolS.remove(curIndex);
+            }
+        }
+        if (!indexB.isEmpty()) {
+            for (int i=0; i<indexB.size(); i++) {
+                curIndex = indexB.get(i);
+                poolB.remove(curIndex);
             }
         }
         pool.put(order.getSecCode()+"S", poolS);
