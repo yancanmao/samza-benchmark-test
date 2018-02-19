@@ -84,19 +84,7 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        // remove dealed order
-        if (!indexS.isEmpty()) {
-            for (int p=0; p<indexS.size(); p++) {
-                int curIndexS = indexS.get(p);
-                poolS.remove(curIndexS);
-            }
-        }
-        if (!indexB.isEmpty()) {
-            for (int q=0; q<indexB.size(); q++) {
-                int curIndexB = indexB.get(q);
-                poolB.remove(curIndexB);
-            }
-        }
+        
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // output complete order
