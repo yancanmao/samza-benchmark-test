@@ -64,7 +64,6 @@ public class ShareSBApp implements StreamApplication {
                 // remove chengjiao order
                 poolS.remove(j);
                 j++;
-                // TODO: save poolB poolS
                 // TODO: output poolB poolS price etc
             } else {
                 poolB.get(i).updateOrder(poolB.get(i).getOrderVol());
@@ -75,7 +74,6 @@ public class ShareSBApp implements StreamApplication {
                 // remove chengjiao order
                 poolB.remove(i);
                 i++;
-                // TODO: save poolB poolS
                 // TODO: output poolB poolS price etc
             }
         }
@@ -153,6 +151,8 @@ public class ShareSBApp implements StreamApplication {
                   // if no elements in poolS or poolB, add poolB
                   if (poolS.isEmpty() || poolB.isEmpty()) {
                       poolB.add(order);
+                      pool.put(order.getSecCode()+"B", poolB);
+                      complete = "no transaction";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -160,10 +160,11 @@ public class ShareSBApp implements StreamApplication {
                   for (int i = 0; i < poolB.size(); i++) {
                       if (poolB.get(i).getOrderPrice() < orderPrice) {
                           poolB.add(i, order);
+                          break;
                       }
-                      if (i == poolB.size()-1) {
-                          poolB.add(order);
-                      }
+                  }
+                  if (i == poolB.size()) {
+                      poolB.add(order);
                   }
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
@@ -179,6 +180,8 @@ public class ShareSBApp implements StreamApplication {
                   // if no elements in poolS or poolB, add poolS
                   if (poolS.isEmpty() || poolB.isEmpty()) {
                       poolS.add(order);
+                      pool.put(order.getSecCode()+"S", poolS);
+                      complete = "no transaction";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -186,10 +189,11 @@ public class ShareSBApp implements StreamApplication {
                   for (int i = 0; i < poolS.size(); i++) {
                       if (poolS.get(i).getOrderPrice() > orderPrice) {
                           poolS.add(i, order);
+                          break;
                       }
-                      if (i == poolS.size()-1) {
-                          poolS.add(order);
-                      }
+                  }
+                  if (i == poolS.size()) {
+                      poolS.add(order);
                   }
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
