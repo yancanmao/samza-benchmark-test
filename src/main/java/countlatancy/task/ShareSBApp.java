@@ -162,10 +162,11 @@ public class ShareSBApp implements StreamApplication {
                           poolB.add(i, order);
                           break;
                       }
+                      if (i == poolB.size()-1) {
+                          poolB.add(order);
+                      }
                   }
-                  if (i == poolB.size()) {
-                      poolB.add(order);
-                  }
+                  
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // this.savepool();
@@ -191,10 +192,11 @@ public class ShareSBApp implements StreamApplication {
                           poolS.add(i, order);
                           break;
                       }
+                      if (i == poolS.size()-1) {
+                          poolS.add(order);
+                      }
                   }
-                  if (i == poolS.size()) {
-                      poolS.add(order);
-                  }
+                  
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // order.savepool();
