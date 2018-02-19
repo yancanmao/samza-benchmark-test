@@ -52,10 +52,12 @@ class Order {
     return Float.parseFloat(this.orderList[Order_Price]);
   }
   int getOrderExecVol() {
-    return Float.parseFloat(this.orderList[Order_Exec_Vol]).intValue();
+    Float orderExecVol = Float.parseFloat(this.orderList[Order_Exec_Vol]);
+    return orderExecVol.intValue();
   }
   int getOrderVol() {
-    return Float.parseFloat(this.orderList[Order_Vol]).intValue();
+    Float orderVol = Float.parseFloat(this.orderList[Order_Vol]);
+    return orderVol.intValue();
   }
   String getSecCode() {
     return this.orderList[Sec_Code];
