@@ -90,15 +90,15 @@ public class ShareSBApp implements StreamApplication {
         }
         // remove dealed order
         if (!indexS.isEmpty()) {
-            for (int i=0; i<indexS.size(); i++) {
-                curIndex = indexS.get(i);
-                poolS.remove(curIndex);
+            for (int p=0; p<indexS.size(); p++) {
+                int curIndexS = indexS.get(p);
+                poolS.remove(curIndexS);
             }
         }
         if (!indexB.isEmpty()) {
-            for (int i=0; i<indexB.size(); i++) {
-                curIndex = indexB.get(i);
-                poolB.remove(curIndex);
+            for (int q=0; q<indexB.size(); q++) {
+                int curIndexB = indexB.get(q);
+                poolB.remove(curIndexB);
             }
         }
         pool.put(order.getSecCode()+"S", poolS);
