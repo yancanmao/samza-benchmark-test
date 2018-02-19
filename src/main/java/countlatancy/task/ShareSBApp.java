@@ -164,6 +164,7 @@ public class ShareSBApp implements StreamApplication {
                       }
                       if (i == poolB.size()-1) {
                           poolB.add(order);
+                          break;
                       }
                   }
                   
@@ -194,6 +195,7 @@ public class ShareSBApp implements StreamApplication {
                       }
                       if (i == poolS.size()-1) {
                           poolS.add(order);
+                          break;
                       }
                   }
                   
