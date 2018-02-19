@@ -151,6 +151,7 @@ public class ShareSBApp implements StreamApplication {
           })
           .filter((order) -> order.getTranMaintCode() != "D")
           .filter((order) -> order.getTranMaintCode() != "X")
+          .filter((order) -> order.getTranMaintCode() != "")
           .map((order)->{
               String complete = new String();
               if (order.getTradeDir() == "B") {
@@ -185,6 +186,7 @@ public class ShareSBApp implements StreamApplication {
                       // this.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
+                      complete = "no transaction";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                    }
@@ -220,6 +222,7 @@ public class ShareSBApp implements StreamApplication {
                       // order.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
+                      complete = "no transaction";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                   }
