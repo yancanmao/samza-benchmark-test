@@ -151,7 +151,7 @@ public class ShareSBApp implements StreamApplication {
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
                   // if no elements in poolS or poolB, add poolB
-                  if (poolS.isEmpty() or poolB.isEmpty()) {
+                  if (poolS.isEmpty() || poolB.isEmpty()) {
                       poolB.add(order);
                       return complete;
                   }
@@ -177,7 +177,7 @@ public class ShareSBApp implements StreamApplication {
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
                   // if no elements in poolS or poolB, add poolS
-                  if (poolS.isEmpty() or poolB.isEmpty()) {
+                  if (poolS.isEmpty() || poolB.isEmpty()) {
                       poolS.add(order);
                       return complete;
                   }
