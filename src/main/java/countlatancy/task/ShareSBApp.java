@@ -43,6 +43,7 @@ public class ShareSBApp implements StreamApplication {
     private static final String OUTPUT_TOPIC = "ShareSB";
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
+    private static final String FILTER_KEY3 = "";
     
     // TODO: transaction
     public String transaction(List<Order> poolB, List<Order> poolS, Map<String, List<Order>> pool, Order order) {
@@ -149,9 +150,9 @@ public class ShareSBApp implements StreamApplication {
             Order order = new Order(tuple);
             return order;
           })
-          .filter((order) -> order.getTranMaintCode() != "D")
-          .filter((order) -> order.getTranMaintCode() != "X")
-          .filter((order) -> order.getTranMaintCode() != "")
+          .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
+          .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
+          .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
           .map((order)->{
               String complete = new String();
               if (order.getTradeDir() == "B") {
