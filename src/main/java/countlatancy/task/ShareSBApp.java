@@ -150,7 +150,7 @@ public class ShareSBApp implements StreamApplication {
             Order order = new Order(tuple);
             return order;
           })
-          .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
+          // .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
           .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
           .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
           .map((order)->{
@@ -158,11 +158,25 @@ public class ShareSBApp implements StreamApplication {
               if (order.getTradeDir() == "B") {
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
+                  // if order tran_maint_code is "D", delete from pool
+                  if (FILTER_KEY1.equals(order.getTranMaintCode())) {
+                      // if exist in order, remove from pool
+                      String orderNo = order.getOrderNo();
+                      for (int i=0; i<poolB.size(); i++) {
+                          if (orderNo.equals(poolB.get(i).getOrderNo())) {
+                              poolB.remove(i);
+                              pool.put(order.getSecCode()+"B", poolB);
+                              return "delete order:" + orderNo;
+                          }
+                      }
+                      // else output no delete order exist
+                      return "no such order to delete";              
+                  }
                   // if no elements in poolS, no transaction, add poolB
                   if (poolS.isEmpty()) {
                       poolB.add(order);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "no transaction";
+                      complete = "empty poolS, no transaction";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -187,18 +201,32 @@ public class ShareSBApp implements StreamApplication {
                       // this.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "no transaction";
+                      complete = "no price match, no transaction";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                    }
               } else {
                   List<Order> poolB = pool.get(order.getSecCode()+"B");
                   List<Order> poolS = pool.get(order.getSecCode()+"S");
+                  // if order tran_maint_code is "D", delete from pool
+                  if (FILTER_KEY1.equals(order.getTranMaintCode())) {
+                      // if exist in order, remove from pool
+                      String orderNo = order.getOrderNo();
+                      for (int i=0; i<poolS.size(); i++) {
+                          if (orderNo.equals(poolS.get(i).getOrderNo())) {
+                              poolS.remove(i);
+                              pool.put(order.getSecCode()+"S", poolS);
+                              return "delete order:" + orderNo;
+                          }
+                      }
+                      // else output no delete order exist
+                      return "no such order to delete:"+ orderNo;              
+                  }
                   // if no elements in poolB, no transaction, add poolS
                   if (poolB.isEmpty()) {
                       poolS.add(order);
                       pool.put(order.getSecCode()+"S", poolS);
-                      complete = "no transaction";
+                      complete = "empty poolB, no transaction";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -223,7 +251,7 @@ public class ShareSBApp implements StreamApplication {
                       // order.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "no transaction";
+                      complete = "no price match, no transaction";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                   }
