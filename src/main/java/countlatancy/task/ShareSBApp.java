@@ -155,9 +155,16 @@ public class ShareSBApp implements StreamApplication {
           .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
           .map((order)->{
               String complete = new String();
+              // load poolS poolB
+              List<Order> poolS = pool.get(order.getSecCode()+"S");
+              List<Order> poolB = pool.get(order.getSecCode()+"B");
+              if (poolB == null) {
+                  poolB = new ArrayList<>();
+              }
+              if (poolS == null) {
+                  poolS = new ArrayList<>();
+              }
               if (order.getTradeDir() == "B") {
-                  List<Order> poolS = pool.get(order.getSecCode()+"S");
-                  List<Order> poolB = pool.get(order.getSecCode()+"B");
                   // if order tran_maint_code is "D", delete from pool
                   if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                       // if exist in order, remove from pool
@@ -206,8 +213,6 @@ public class ShareSBApp implements StreamApplication {
                       complete = this.transaction(poolB, poolS, pool, order);
                    }
               } else {
-                  List<Order> poolB = pool.get(order.getSecCode()+"B");
-                  List<Order> poolS = pool.get(order.getSecCode()+"S");
                   // if order tran_maint_code is "D", delete from pool
                   if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                       // if exist in order, remove from pool
