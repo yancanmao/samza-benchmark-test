@@ -164,20 +164,20 @@ public class ShareSBApp implements StreamApplication {
               if (poolS == null) {
                   poolS = new ArrayList<>();
               }
-              if (order.getTradeDir() == "B") {
+              if (order.getTradeDir().equals("B")) {
                   // if order tran_maint_code is "D", delete from pool
                   if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                       // if exist in order, remove from pool
                       String orderNo = order.getOrderNo();
-                      for (int i=0; i<poolB.size(); i++) {
+                      for (int i=0; i < poolB.size(); i++) {
                           if (orderNo.equals(poolB.get(i).getOrderNo())) {
                               poolB.remove(i);
                               pool.put(order.getSecCode()+"B", poolB);
-                              return "delete order:" + orderNo;
+                              return "delete B order:" + orderNo;
                           }
                       }
                       // else output no delete order exist
-                      return "no such order to delete";              
+                      return "no such B order to delete:" + orderNo;              
                   }
                   // if no elements in poolS, no transaction, add poolB
                   if (poolS.isEmpty()) {
@@ -212,20 +212,20 @@ public class ShareSBApp implements StreamApplication {
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                    }
-              } else {
+              } else if (order.getTradeDir().equals("S")) {
                   // if order tran_maint_code is "D", delete from pool
                   if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                       // if exist in order, remove from pool
                       String orderNo = order.getOrderNo();
-                      for (int i=0; i<poolS.size(); i++) {
+                      for (int i=0; i < poolS.size(); i++) {
                           if (orderNo.equals(poolS.get(i).getOrderNo())) {
                               poolS.remove(i);
                               pool.put(order.getSecCode()+"S", poolS);
-                              return "delete order:" + orderNo;
+                              return "delete S order:" + orderNo;
                           }
                       }
                       // else output no delete order exist
-                      return "no such order to delete:"+ orderNo;              
+                      return "no such S order to delete:"+ orderNo;              
                   }
                   // if no elements in poolB, no transaction, add poolS
                   if (poolB.isEmpty()) {
@@ -260,6 +260,8 @@ public class ShareSBApp implements StreamApplication {
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                   }
+              } else {
+                  return "wrong getTradeDir";
               }
               return complete;
           })

@@ -35,7 +35,7 @@ class Order {
   private static final int Order_Exec_Vol = 9;
   private static final int Order_Vol = 10;
   private static final int Sec_Code = 11;
-  private static final int Trade_Dir = 12;
+  private static final int Trade_Dir = 22;
 
   Order(String tuple) {
     orderList = tuple.split("\\|");
