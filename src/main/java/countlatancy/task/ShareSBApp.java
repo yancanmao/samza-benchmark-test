@@ -45,7 +45,11 @@ public class ShareSBApp implements StreamApplication {
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
     
-    // TODO: transaction
+    /**
+     * deal continous transaction
+     * @param poolB,poolS,pool,order
+     * @return output string 
+     */
     public String transaction(List<Order> poolB, List<Order> poolS, Map<String, List<Order>> pool, Order order) {
         // hava a transaction
         int top = 0;
@@ -53,6 +57,7 @@ public class ShareSBApp implements StreamApplication {
         int j = 0;
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("{deal:{");
         // List<Order> completeB = new ArrayList<>();
         while (poolS.get(top).getOrderPrice() <= poolB.get(top).getOrderPrice()) {
             if (poolB.get(top).getOrderVol() > poolS.get(top).getOrderVol()) {
@@ -62,7 +67,7 @@ public class ShareSBApp implements StreamApplication {
                 poolS.get(top).updateOrder(poolS.get(top).getOrderVol());
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
-                messageBuilder.append(poolS.get(top).getOrderNo()).append(" ");
+                messageBuilder.append(poolS.get(top).getOrderNo()).append(":").append(poolS.get(top).objToString()).append(",");
                 // remove top of poolS
                 poolS.remove(top);
                 // no order in poolS, transaction over
@@ -75,8 +80,8 @@ public class ShareSBApp implements StreamApplication {
                 poolS.get(top).updateOrder(poolB.get(top).getOrderVol());
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
-                messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                // remove top of poolB
+                // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
+                messageBuilder.append(poolB.get(top).getOrderNo()).append(":").append(poolB.get(top).objToString()).append(",");
                 poolB.remove(top);
                 // no order in poolB, transaction over
                 if (poolB.isEmpty()) {
@@ -85,13 +90,33 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        
+        messageBuilder.append("}");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
+        // put pool into messageBuilder
+        messageBuilder.append("poolS:{");
+        if (!poolS.isEmpty()) {
+            for (int i = 0; i < poolS.size(); i++) {
+                messageBuilder.append(poolS.get(i).getOrderNo()).append(":").append(poolS.get(i).objToString()).append(",");
+            }
+        }
+        messageBuilder.append("}");
+        messageBuilder.append("poolB:{");
+        if (!poolB.isEmpty()) {
+            for (int i = 0; i < poolB.size(); i++) {
+                messageBuilder.append(poolB.get(i).getOrderNo()).append(":").append(poolB.get(i).objToString()).append(",");
+            }
+        }
+        messageBuilder.append("}");
         // output complete order
         return messageBuilder.toString();
     }
 
+    /**
+     * load file into buffer
+     * @param file
+     * @return List<Order>
+     */
     public List<Order> loadPool(String file) {
       FileReader stream = null;
       BufferedReader br = null;
@@ -211,7 +236,7 @@ public class ShareSBApp implements StreamApplication {
                       complete = "no price match, no transaction";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
-                   }
+                  }
               } else if (order.getTradeDir().equals("S")) {
                   // if order tran_maint_code is "D", delete from pool
                   if (FILTER_KEY1.equals(order.getTranMaintCode())) {

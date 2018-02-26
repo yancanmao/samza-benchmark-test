@@ -66,6 +66,10 @@ class Order {
     return this.orderList[Trade_Dir];
   }
 
+  String objToString() {
+    return String.join("|", this.orderList);
+  }
+
   public boolean updateOrder(int otherOrderVol) {
     this.orderList[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
     this.orderList[Order_Exec_Vol] = (this.getOrderVol() + otherOrderVol) + "";
