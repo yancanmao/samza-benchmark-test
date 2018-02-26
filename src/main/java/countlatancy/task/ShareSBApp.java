@@ -202,17 +202,17 @@ public class ShareSBApp implements StreamApplication {
                           if (orderNo.equals(poolB.get(i).getOrderNo())) {
                               poolB.remove(i);
                               pool.put(order.getSecCode()+"B", poolB);
-                              return "delete B order:" + orderNo;
+                              return "{\"result\":\"delete B order:" + orderNo+"\"}";
                           }
                       }
                       // else output no delete order exist
-                      return "no such B order to delete:" + orderNo;              
+                      return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
                   }
                   // if no elements in poolS, no transaction, add poolB
                   if (poolS.isEmpty()) {
                       poolB.add(order);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "empty poolS, no transaction";
+                      complete = "{\"result\":\"empty poolS, no transaction\"}";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -237,7 +237,7 @@ public class ShareSBApp implements StreamApplication {
                       // this.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "no price match, no transaction";
+                      complete = "{\"result\":\"no price match, no transaction\"}";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                   }
@@ -250,17 +250,17 @@ public class ShareSBApp implements StreamApplication {
                           if (orderNo.equals(poolS.get(i).getOrderNo())) {
                               poolS.remove(i);
                               pool.put(order.getSecCode()+"S", poolS);
-                              return "delete S order:" + orderNo;
+                              return "{\"result\":\"delete S order:" + orderNo+"\"}";
                           }
                       }
                       // else output no delete order exist
-                      return "no such S order to delete:"+ orderNo;              
+                      return "{\"result\":\"no such S order to delete:"+ orderNo+"\"}";              
                   }
                   // if no elements in poolB, no transaction, add poolS
                   if (poolB.isEmpty()) {
                       poolS.add(order);
                       pool.put(order.getSecCode()+"S", poolS);
-                      complete = "empty poolB, no transaction";
+                      complete = "{\"result\":\"empty poolB, no transaction\"}";
                       return complete;
                   }
                   float orderPrice = order.getOrderPrice();
@@ -285,12 +285,12 @@ public class ShareSBApp implements StreamApplication {
                       // order.savepool();
                       pool.put(order.getSecCode()+"S", poolS);
                       pool.put(order.getSecCode()+"B", poolB);
-                      complete = "no price match, no transaction";
+                      complete = "{\"result\":\"no price match, no transaction\"}";
                   } else {
                       complete = this.transaction(poolB, poolS, pool, order);
                   }
               } else {
-                  return "wrong getTradeDir";
+                  return "{\"error\":\"wrong getTradeDir\"}";
               }
               return complete;
           })
