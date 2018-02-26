@@ -57,7 +57,7 @@ public class ShareSBApp implements StreamApplication {
         int j = 0;
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("{deal:{");
+        messageBuilder.append("{\"deal\":{");
         // List<Order> completeB = new ArrayList<>();
         while (poolS.get(top).getOrderPrice() <= poolB.get(top).getOrderPrice()) {
             if (poolB.get(top).getOrderVol() > poolS.get(top).getOrderVol()) {
@@ -67,7 +67,8 @@ public class ShareSBApp implements StreamApplication {
                 poolS.get(top).updateOrder(poolS.get(top).getOrderVol());
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
-                messageBuilder.append(poolS.get(top).getOrderNo()).append(":").append(poolS.get(top).objToString()).append(",");
+                messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolS.get(top).objToString()).append("\"").append(",");
                 // remove top of poolS
                 poolS.remove(top);
                 // no order in poolS, transaction over
@@ -81,7 +82,8 @@ public class ShareSBApp implements StreamApplication {
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                messageBuilder.append(poolB.get(top).getOrderNo()).append(":").append(poolB.get(top).objToString()).append(",");
+                messageBuilder.append("\"").append(poolB.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolB.get(top).objToString()).append("\"").append(",");
                 poolB.remove(top);
                 // no order in poolB, transaction over
                 if (poolB.isEmpty()) {
@@ -94,20 +96,22 @@ public class ShareSBApp implements StreamApplication {
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // put pool into messageBuilder
-        messageBuilder.append("poolS:{");
+        messageBuilder.append("\"poolS\":{");
         if (!poolS.isEmpty()) {
             for (int p = 0; p < poolS.size(); p++) {
-                messageBuilder.append(poolS.get(p).getOrderNo()).append(":").append(poolS.get(p).objToString()).append(",");
+                messageBuilder.append("\"").append(poolS.get(p).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolS.get(p).getOrderVol()).append("\"").append(",");
             }
         }
         messageBuilder.append("}");
-        messageBuilder.append("poolB:{");
+        messageBuilder.append("\"poolB\":{");
         if (!poolB.isEmpty()) {
             for (int q = 0; q < poolB.size(); q++) {
-                messageBuilder.append(poolB.get(q).getOrderNo()).append(":").append(poolB.get(q).objToString()).append(",");
+                messageBuilder.append("\"").append(poolB.get(q).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolB.get(q).getOrderVol()).append("\"").append(",");
             }
         }
-        messageBuilder.append("}");
+        messageBuilder.append("}}");
         // output complete order
         return messageBuilder.toString();
     }
