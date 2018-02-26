@@ -92,7 +92,8 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        messageBuilder.append("}");
+        messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        messageBuilder.append("},");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // put pool into messageBuilder
@@ -103,7 +104,8 @@ public class ShareSBApp implements StreamApplication {
                               .append(":").append("\"").append(poolS.get(p).getOrderVol()).append("\"").append(",");
             }
         }
-        messageBuilder.append("}");
+        messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        messageBuilder.append("},");
         messageBuilder.append("\"poolB\":{");
         if (!poolB.isEmpty()) {
             for (int q = 0; q < poolB.size(); q++) {
@@ -111,6 +113,7 @@ public class ShareSBApp implements StreamApplication {
                               .append(":").append("\"").append(poolB.get(q).getOrderVol()).append("\"").append(",");
             }
         }
+        messageBuilder.deleteCharAt(messageBuilder.length()-1);
         messageBuilder.append("}}");
         // output complete order
         return messageBuilder.toString();
