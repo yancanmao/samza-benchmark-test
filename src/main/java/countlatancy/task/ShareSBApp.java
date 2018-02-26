@@ -97,23 +97,23 @@ public class ShareSBApp implements StreamApplication {
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // put pool into messageBuilder
-        messageBuilder.append("\"poolS\":{");
-        if (!poolS.isEmpty()) {
-            for (int p = 0; p < poolS.size(); p++) {
-                messageBuilder.append("\"").append(poolS.get(p).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolS.get(p).getOrderVol()).append("\"").append(",");
-            }
-        }
-        messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("},");
-        messageBuilder.append("\"poolB\":{");
-        if (!poolB.isEmpty()) {
-            for (int q = 0; q < poolB.size(); q++) {
-                messageBuilder.append("\"").append(poolB.get(q).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolB.get(q).getOrderVol()).append("\"").append(",");
-            }
-        }
-        messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        // messageBuilder.append("\"poolS\":{");
+        // if (!poolS.isEmpty()) {
+        //     for (int p = 0; p < poolS.size(); p++) {
+        //         messageBuilder.append("\"").append(poolS.get(p).getOrderNo()).append("\"")
+        //                       .append(":").append("\"").append(poolS.get(p).getOrderVol()).append("\"").append(",");
+        //     }
+        // }
+        // messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        // messageBuilder.append("},");
+        // messageBuilder.append("\"poolB\":{");
+        // if (!poolB.isEmpty()) {
+        //     for (int q = 0; q < poolB.size(); q++) {
+        //         messageBuilder.append("\"").append(poolB.get(q).getOrderNo()).append("\"")
+        //                       .append(":").append("\"").append(poolB.get(q).getOrderVol()).append("\"").append(",");
+        //     }
+        // }
+        // messageBuilder.deleteCharAt(messageBuilder.length()-1);
         messageBuilder.append("}}");
         // output complete order
         return messageBuilder.toString();
