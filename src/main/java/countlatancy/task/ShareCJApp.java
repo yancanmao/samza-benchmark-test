@@ -40,6 +40,7 @@ public class ShareCJApp implements StreamApplication {
   // private static final Logger LOG = LoggerFactory.getLogger(TumblingPageViewCounterApp.class);
   private static final String INPUT_TOPIC = "FileToStream";
   private static final String OUTPUT_TOPIC = "ShareCJ";
+  private static final String FILTER_KEY1 = "D";
 
   @Override
   public void init(StreamGraph graph, Config config) {
@@ -55,6 +56,11 @@ public class ShareCJApp implements StreamApplication {
     //Function<String, String> mapFn = pageView -> new withTime(pageView).getValue();
 
     pageViews
+        .filter((order) -> {
+            String[] orderList = order.split("\\|");
+            return !FILTER_KEY1.equals(orderList[1]);
+        })
+        //.filter((order) -> order.split("\\|")[1] != "X")
         .sendTo(outputStream);
   }
 }

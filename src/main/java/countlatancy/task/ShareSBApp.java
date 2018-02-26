@@ -96,15 +96,15 @@ public class ShareSBApp implements StreamApplication {
         // put pool into messageBuilder
         messageBuilder.append("poolS:{");
         if (!poolS.isEmpty()) {
-            for (int i = 0; i < poolS.size(); i++) {
-                messageBuilder.append(poolS.get(i).getOrderNo()).append(":").append(poolS.get(i).objToString()).append(",");
+            for (int p = 0; p < poolS.size(); p++) {
+                messageBuilder.append(poolS.get(p).getOrderNo()).append(":").append(poolS.get(p).objToString()).append(",");
             }
         }
         messageBuilder.append("}");
         messageBuilder.append("poolB:{");
         if (!poolB.isEmpty()) {
-            for (int i = 0; i < poolB.size(); i++) {
-                messageBuilder.append(poolB.get(i).getOrderNo()).append(":").append(poolB.get(i).objToString()).append(",");
+            for (int q = 0; q < poolB.size(); q++) {
+                messageBuilder.append(poolB.get(q).getOrderNo()).append(":").append(poolB.get(q).objToString()).append(",");
             }
         }
         messageBuilder.append("}");
