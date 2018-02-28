@@ -211,13 +211,7 @@ public class ShareSBApp implements StreamApplication {
                       // else output no delete order exist
                       return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
                   }
-                  // if no elements in poolS, no transaction, add poolB
-                  if (poolS.isEmpty()) {
-                      poolB.add(order);
-                      pool.put(order.getSecCode()+"B", poolB);
-                      complete = "{\"result\":\"empty poolS, no transaction\"}";
-                      return complete;
-                  }
+                  
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolB
                   if (!poolB.isEmpty()) {
@@ -235,6 +229,13 @@ public class ShareSBApp implements StreamApplication {
                       poolB.add(order);
                   }
                   
+                  // if no elements in poolS, no transaction, add poolB
+                  if (poolS.isEmpty()) {
+                      pool.put(order.getSecCode()+"B", poolB);
+                      complete = "{\"result\":\"empty poolS, no transaction\"}";
+                      return complete;
+                  }
+
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // this.savepool();
@@ -259,13 +260,7 @@ public class ShareSBApp implements StreamApplication {
                       // else output no delete order exist
                       return "{\"result\":\"no such S order to delete:"+ orderNo+"\"}";              
                   }
-                  // if no elements in poolB, no transaction, add poolS
-                  if (poolB.isEmpty()) {
-                      poolS.add(order);
-                      pool.put(order.getSecCode()+"S", poolS);
-                      complete = "{\"result\":\"empty poolB, no transaction\"}";
-                      return complete;
-                  }
+                  
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolS
                   if (!poolS.isEmpty()) {
@@ -281,6 +276,13 @@ public class ShareSBApp implements StreamApplication {
                       }
                   } else {
                       poolS.add(order);
+                  }
+
+                  // if no elements in poolB, no transaction, add poolS
+                  if (poolB.isEmpty()) {
+                      pool.put(order.getSecCode()+"S", poolS);
+                      complete = "{\"result\":\"empty poolB, no transaction\"}";
+                      return complete;
                   }
                   
                   // no satisfied price
