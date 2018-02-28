@@ -69,6 +69,8 @@ public class ShareSBApp implements StreamApplication {
                 // complete.add(poolS.get(j).getOrderNo());
                 messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
                               .append(":").append("\"").append(poolS.get(top).objToString()).append("\"").append(",");
+                messageBuilder.append("\"").append(poolB.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolB.get(top).objToString()).append("\"").append(",");
                 // remove top of poolS
                 poolS.remove(top);
                 // no order in poolS, transaction over
@@ -82,6 +84,8 @@ public class ShareSBApp implements StreamApplication {
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
+                messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolS.get(top).objToString()).append("\"").append(",");
                 messageBuilder.append("\"").append(poolB.get(top).getOrderNo()).append("\"")
                               .append(":").append("\"").append(poolB.get(top).objToString()).append("\"").append(",");
                 poolB.remove(top);
@@ -93,7 +97,7 @@ public class ShareSBApp implements StreamApplication {
             }
         }
         messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("},");
+        messageBuilder.append("}");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // put pool into messageBuilder
@@ -114,7 +118,7 @@ public class ShareSBApp implements StreamApplication {
         //     }
         // }
         // messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("}}");
+        messageBuilder.append("}");
         // output complete order
         return messageBuilder.toString();
     }
