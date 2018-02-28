@@ -55,6 +55,7 @@ public class ShareSBApp implements StreamApplication {
         int top = 0;
         int i = 0;
         int j = 0;
+        int otherOrderVol;
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
         messageBuilder.append("{\"deal\":{");
@@ -62,9 +63,10 @@ public class ShareSBApp implements StreamApplication {
         while (poolS.get(top).getOrderPrice() <= poolB.get(top).getOrderPrice()) {
             if (poolB.get(top).getOrderVol() > poolS.get(top).getOrderVol()) {
                 // B remains B_top-S_top
-                poolB.get(top).updateOrder(poolS.get(top).getOrderVol());
+                otherOrderVol = poolS.get(top).getOrderVol();
+                poolB.get(top).updateOrder(otherOrderVol);
                 // S complete
-                poolS.get(top).updateOrder(poolS.get(top).getOrderVol());
+                poolS.get(top).updateOrder(otherOrderVol);
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
                 messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
@@ -79,8 +81,9 @@ public class ShareSBApp implements StreamApplication {
                 }
                 // TODO: output poolB poolS price etc
             } else {
-                poolB.get(top).updateOrder(poolB.get(top).getOrderVol());
-                poolS.get(top).updateOrder(poolB.get(top).getOrderVol());
+                otherOrderVol = poolB.get(top).getOrderVol();
+                poolB.get(top).updateOrder(otherOrderVol);
+                poolS.get(top).updateOrder(otherOrderVol);
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
