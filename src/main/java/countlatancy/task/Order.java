@@ -72,7 +72,7 @@ class Order {
 
   public boolean updateOrder(int otherOrderVol) {
     this.orderList[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
-    this.orderList[Order_Exec_Vol] = (this.getOrderVol() + otherOrderVol) + "";
+    this.orderList[Order_Exec_Vol] = (this.getOrderExecVol() + otherOrderVol) + "";
     return true;
   }
 }

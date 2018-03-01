@@ -55,6 +55,7 @@ public class ShareSBApp implements StreamApplication {
         int top = 0;
         int i = 0;
         int j = 0;
+        int otherOrderVol;
         // List<String> complete = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
         messageBuilder.append("{\"deal\":{");
@@ -62,13 +63,16 @@ public class ShareSBApp implements StreamApplication {
         while (poolS.get(top).getOrderPrice() <= poolB.get(top).getOrderPrice()) {
             if (poolB.get(top).getOrderVol() > poolS.get(top).getOrderVol()) {
                 // B remains B_top-S_top
-                poolB.get(top).updateOrder(poolS.get(top).getOrderVol());
+                otherOrderVol = poolS.get(top).getOrderVol();
+                poolB.get(top).updateOrder(otherOrderVol);
                 // S complete
-                poolS.get(top).updateOrder(poolS.get(top).getOrderVol());
+                poolS.get(top).updateOrder(otherOrderVol);
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
                 messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
                               .append(":").append("\"").append(poolS.get(top).objToString()).append("\"").append(",");
+                messageBuilder.append("\"").append(poolB.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolB.get(top).objToString()).append("\"").append(",");
                 // remove top of poolS
                 poolS.remove(top);
                 // no order in poolS, transaction over
@@ -77,11 +81,14 @@ public class ShareSBApp implements StreamApplication {
                 }
                 // TODO: output poolB poolS price etc
             } else {
-                poolB.get(top).updateOrder(poolB.get(top).getOrderVol());
-                poolS.get(top).updateOrder(poolB.get(top).getOrderVol());
+                otherOrderVol = poolB.get(top).getOrderVol();
+                poolB.get(top).updateOrder(otherOrderVol);
+                poolS.get(top).updateOrder(otherOrderVol);
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
+                messageBuilder.append("\"").append(poolS.get(top).getOrderNo()).append("\"")
+                              .append(":").append("\"").append(poolS.get(top).objToString()).append("\"").append(",");
                 messageBuilder.append("\"").append(poolB.get(top).getOrderNo()).append("\"")
                               .append(":").append("\"").append(poolB.get(top).objToString()).append("\"").append(",");
                 poolB.remove(top);
@@ -93,7 +100,7 @@ public class ShareSBApp implements StreamApplication {
             }
         }
         messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("},");
+        messageBuilder.append("}");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         // put pool into messageBuilder
@@ -114,7 +121,7 @@ public class ShareSBApp implements StreamApplication {
         //     }
         // }
         // messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("}}");
+        messageBuilder.append("}");
         // output complete order
         return messageBuilder.toString();
     }
@@ -212,13 +219,7 @@ public class ShareSBApp implements StreamApplication {
                       // else output no delete order exist
                       return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
                   }
-                  // if no elements in poolS, no transaction, add poolB
-                  if (poolS.isEmpty()) {
-                      poolB.add(order);
-                      pool.put(order.getSecCode()+"B", poolB);
-                      complete = "{\"result\":\"empty poolS, no transaction\"}";
-                      return complete;
-                  }
+                  
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolB
                   if (!poolB.isEmpty()) {
@@ -236,6 +237,13 @@ public class ShareSBApp implements StreamApplication {
                       poolB.add(order);
                   }
                   
+                  // if no elements in poolS, no transaction, add poolB
+                  if (poolS.isEmpty()) {
+                      pool.put(order.getSecCode()+"B", poolB);
+                      complete = "{\"result\":\"empty poolS, no transaction\"}";
+                      return complete;
+                  }
+
                   // no satisfied price
                   if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
                       // this.savepool();
@@ -260,13 +268,7 @@ public class ShareSBApp implements StreamApplication {
                       // else output no delete order exist
                       return "{\"result\":\"no such S order to delete:"+ orderNo+"\"}";              
                   }
-                  // if no elements in poolB, no transaction, add poolS
-                  if (poolB.isEmpty()) {
-                      poolS.add(order);
-                      pool.put(order.getSecCode()+"S", poolS);
-                      complete = "{\"result\":\"empty poolB, no transaction\"}";
-                      return complete;
-                  }
+                  
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolS
                   if (!poolS.isEmpty()) {
@@ -282,6 +284,13 @@ public class ShareSBApp implements StreamApplication {
                       }
                   } else {
                       poolS.add(order);
+                  }
+
+                  // if no elements in poolB, no transaction, add poolS
+                  if (poolB.isEmpty()) {
+                      pool.put(order.getSecCode()+"S", poolS);
+                      complete = "{\"result\":\"empty poolB, no transaction\"}";
+                      return complete;
                   }
                   
                   // no satisfied price
