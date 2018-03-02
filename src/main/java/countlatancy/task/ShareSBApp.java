@@ -171,8 +171,8 @@ public class ShareSBApp implements StreamApplication {
             .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
 
         // TODO: load pool into mem
-        //File dirFile = new File("/home/myc/workspace/share/opening");
-        File dirFile = new File("/root/share/opening");
+        File dirFile = new File("/home/myc/workspace/share/opening");
+        //File dirFile = new File("/root/share/opening");
         String[] fileList = dirFile.list();
         Map<String, List<Order>> pool = new HashMap<String, List<Order>>();
         for (int i = 0; i < fileList.length; i++) {
@@ -190,6 +190,7 @@ public class ShareSBApp implements StreamApplication {
             Order order = new Order(tuple);
             return order;
           })
+          //.partitionBy((order)->order.getSecCode())
           // .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
           .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
           .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
@@ -218,7 +219,7 @@ public class ShareSBApp implements StreamApplication {
                       }
                       // else output no delete order exist
                       return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
-                  }
+                   }
                   
                   float orderPrice = order.getOrderPrice();
                   // put into buy poolB
