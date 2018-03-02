@@ -162,6 +162,126 @@ public class ShareSBApp implements StreamApplication {
       return pool;
     }
 
+    /**
+     * mapFunction
+     * @param pool, order
+     * @return complete
+     */
+    public String mapFunction(Map<String, List<Order>> pool, Order order) {
+        String complete = new String();
+        // load poolS poolB
+        List<Order> poolS = pool.get(order.getSecCode()+"S");
+        List<Order> poolB = pool.get(order.getSecCode()+"B");
+        if (poolB == null) {
+            poolB = new ArrayList<>();
+        }
+        if (poolS == null) {
+            poolS = new ArrayList<>();
+        }
+        if (order.getTradeDir().equals("B")) {
+            // if order tran_maint_code is "D", delete from pool
+            if (FILTER_KEY1.equals(order.getTranMaintCode())) {
+                // if exist in order, remove from pool
+                String orderNo = order.getOrderNo();
+                for (int i=0; i < poolB.size(); i++) {
+                    if (orderNo.equals(poolB.get(i).getOrderNo())) {
+                        poolB.remove(i);
+                        pool.put(order.getSecCode()+"B", poolB);
+                        return "{\"result\":\"delete B order:" + orderNo+"\"}";
+                    }
+                }
+                // else output no delete order exist
+                return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
+             }
+            
+            float orderPrice = order.getOrderPrice();
+            // put into buy poolB
+            if (!poolB.isEmpty()) {
+                for (int i = 0; i < poolB.size(); i++) {
+                    if (poolB.get(i).getOrderPrice() < orderPrice) {
+                        poolB.add(i, order);
+                        break;
+                    }
+                    if (i == poolB.size()-1) {
+                        poolB.add(order);
+                        break;
+                    }
+                }
+            } else {
+                poolB.add(order);
+            }
+            
+            // if no elements in poolS, no transaction, add poolB
+            if (poolS.isEmpty()) {
+                pool.put(order.getSecCode()+"B", poolB);
+                complete = "{\"result\":\"empty poolS, no transaction\"}";
+                return complete;
+            }
+
+            // no satisfied price
+            if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
+                // this.savepool();
+                pool.put(order.getSecCode()+"S", poolS);
+                pool.put(order.getSecCode()+"B", poolB);
+                complete = "{\"result\":\"no price match, no transaction\"}";
+            } else {
+                complete = this.transaction(poolB, poolS, pool, order);
+            }
+        } else if (order.getTradeDir().equals("S")) {
+            // if order tran_maint_code is "D", delete from pool
+            if (FILTER_KEY1.equals(order.getTranMaintCode())) {
+                // if exist in order, remove from pool
+                String orderNo = order.getOrderNo();
+                for (int i=0; i < poolS.size(); i++) {
+                    if (orderNo.equals(poolS.get(i).getOrderNo())) {
+                        poolS.remove(i);
+                        pool.put(order.getSecCode()+"S", poolS);
+                        return "{\"result\":\"delete S order:" + orderNo+"\"}";
+                    }
+                }
+                // else output no delete order exist
+                return "{\"result\":\"no such S order to delete:"+ orderNo+"\"}";              
+            }
+            
+            float orderPrice = order.getOrderPrice();
+            // put into buy poolS
+            if (!poolS.isEmpty()) {
+                for (int i = 0; i < poolS.size(); i++) {
+                    if (poolS.get(i).getOrderPrice() > orderPrice) {
+                        poolS.add(i, order);
+                        break;
+                    }
+                    if (i == poolS.size()-1) {
+                        poolS.add(order);
+                        break;
+                    }
+                }
+            } else {
+                poolS.add(order);
+            }
+
+            // if no elements in poolB, no transaction, add poolS
+            if (poolB.isEmpty()) {
+                pool.put(order.getSecCode()+"S", poolS);
+                complete = "{\"result\":\"empty poolB, no transaction\"}";
+                return complete;
+            }
+            
+            // no satisfied price
+            if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
+                // order.savepool();
+                pool.put(order.getSecCode()+"S", poolS);
+                pool.put(order.getSecCode()+"B", poolB);
+                complete = "{\"result\":\"no price match, no transaction\"}";
+            } else {
+                complete = this.transaction(poolB, poolS, pool, order);
+            }
+        } else {
+            return "{\"error\":\"wrong getTradeDir\"}";
+        }
+        return complete;
+    }
+
     @Override
     public void init(StreamGraph graph, Config config) {
 
@@ -195,118 +315,7 @@ public class ShareSBApp implements StreamApplication {
           .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
           .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
           .map((order)->{
-              String complete = new String();
-              // load poolS poolB
-              List<Order> poolS = pool.get(order.getSecCode()+"S");
-              List<Order> poolB = pool.get(order.getSecCode()+"B");
-              if (poolB == null) {
-                  poolB = new ArrayList<>();
-              }
-              if (poolS == null) {
-                  poolS = new ArrayList<>();
-              }
-              if (order.getTradeDir().equals("B")) {
-                  // if order tran_maint_code is "D", delete from pool
-                  if (FILTER_KEY1.equals(order.getTranMaintCode())) {
-                      // if exist in order, remove from pool
-                      String orderNo = order.getOrderNo();
-                      for (int i=0; i < poolB.size(); i++) {
-                          if (orderNo.equals(poolB.get(i).getOrderNo())) {
-                              poolB.remove(i);
-                              pool.put(order.getSecCode()+"B", poolB);
-                              return "{\"result\":\"delete B order:" + orderNo+"\"}";
-                          }
-                      }
-                      // else output no delete order exist
-                      return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
-                   }
-                  
-                  float orderPrice = order.getOrderPrice();
-                  // put into buy poolB
-                  if (!poolB.isEmpty()) {
-                      for (int i = 0; i < poolB.size(); i++) {
-                          if (poolB.get(i).getOrderPrice() < orderPrice) {
-                              poolB.add(i, order);
-                              break;
-                          }
-                          if (i == poolB.size()-1) {
-                              poolB.add(order);
-                              break;
-                          }
-                      }
-                  } else {
-                      poolB.add(order);
-                  }
-                  
-                  // if no elements in poolS, no transaction, add poolB
-                  if (poolS.isEmpty()) {
-                      pool.put(order.getSecCode()+"B", poolB);
-                      complete = "{\"result\":\"empty poolS, no transaction\"}";
-                      return complete;
-                  }
-
-                  // no satisfied price
-                  if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
-                      // this.savepool();
-                      pool.put(order.getSecCode()+"S", poolS);
-                      pool.put(order.getSecCode()+"B", poolB);
-                      complete = "{\"result\":\"no price match, no transaction\"}";
-                  } else {
-                      complete = this.transaction(poolB, poolS, pool, order);
-                  }
-              } else if (order.getTradeDir().equals("S")) {
-                  // if order tran_maint_code is "D", delete from pool
-                  if (FILTER_KEY1.equals(order.getTranMaintCode())) {
-                      // if exist in order, remove from pool
-                      String orderNo = order.getOrderNo();
-                      for (int i=0; i < poolS.size(); i++) {
-                          if (orderNo.equals(poolS.get(i).getOrderNo())) {
-                              poolS.remove(i);
-                              pool.put(order.getSecCode()+"S", poolS);
-                              return "{\"result\":\"delete S order:" + orderNo+"\"}";
-                          }
-                      }
-                      // else output no delete order exist
-                      return "{\"result\":\"no such S order to delete:"+ orderNo+"\"}";              
-                  }
-                  
-                  float orderPrice = order.getOrderPrice();
-                  // put into buy poolS
-                  if (!poolS.isEmpty()) {
-                      for (int i = 0; i < poolS.size(); i++) {
-                          if (poolS.get(i).getOrderPrice() > orderPrice) {
-                              poolS.add(i, order);
-                              break;
-                          }
-                          if (i == poolS.size()-1) {
-                              poolS.add(order);
-                              break;
-                          }
-                      }
-                  } else {
-                      poolS.add(order);
-                  }
-
-                  // if no elements in poolB, no transaction, add poolS
-                  if (poolB.isEmpty()) {
-                      pool.put(order.getSecCode()+"S", poolS);
-                      complete = "{\"result\":\"empty poolB, no transaction\"}";
-                      return complete;
-                  }
-                  
-                  // no satisfied price
-                  if (poolS.get(0).getOrderPrice() > poolB.get(0).getOrderPrice()) {
-                      // order.savepool();
-                      pool.put(order.getSecCode()+"S", poolS);
-                      pool.put(order.getSecCode()+"B", poolB);
-                      complete = "{\"result\":\"no price match, no transaction\"}";
-                  } else {
-                      complete = this.transaction(poolB, poolS, pool, order);
-                  }
-              } else {
-                  return "{\"error\":\"wrong getTradeDir\"}";
-              }
-              return complete;
+              return this.mapFunction(pool, order);
           })
           .sendTo(outputStream);
     }
