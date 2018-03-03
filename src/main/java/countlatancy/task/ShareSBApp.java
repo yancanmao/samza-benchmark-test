@@ -138,7 +138,7 @@ public class ShareSBApp implements StreamApplication {
       File textFile = new File(file);
       // if file exists
       if (!textFile.exists()) {
-          return poolI;
+          return new Pool(poolI, pricePoolI);
       }
 
       try{
@@ -219,14 +219,18 @@ public class ShareSBApp implements StreamApplication {
             if (BorderList == null) {
                 BorderList = new ArrayList<>();
                 // price add a value
-                for (int i = 0; i < poolPriceB.size(); i++) {
-                    if (poolPriceB.get(i) < orderPrice) {
-                        poolPriceB.add(i, orderPrice);
-                        break;
-                    }
-                    if (i == poolPriceB.size()-1) {
-                        poolPriceB.add(orderPrice);
-                        break;
+                if (poolB.isEmpty()) {
+                    poolPriceB.add(orderPrice);
+                } else {
+                    for (int i = 0; i < poolPriceB.size(); i++) {
+                        if (poolPriceB.get(i) < orderPrice) {
+                            poolPriceB.add(i, orderPrice);
+                            break;
+                        }
+                        if (i == poolPriceB.size()-1) {
+                            poolPriceB.add(orderPrice);
+                            break;
+                        }
                     }
                 }
             }
@@ -278,14 +282,18 @@ public class ShareSBApp implements StreamApplication {
             if (SorderList == null) {
                 SorderList = new ArrayList<>();
                 // price add a value
-                for (int i = 0; i < poolPriceS.size(); i++) {
-                    if (poolPriceS.get(i) < orderPrice) {
-                        poolPriceS.add(i, orderPrice);
-                        break;
-                    }
-                    if (i == poolPriceS.size()-1) {
-                        poolPriceS.add(orderPrice);
-                        break;
+                if (poolS.isEmpty()) {
+                    poolPriceS.add(orderPrice);
+                } else {
+                    for (int i = 0; i < poolPriceS.size(); i++) {
+                        if (poolPriceS.get(i) < orderPrice) {
+                            poolPriceS.add(i, orderPrice);
+                            break;
+                        }
+                        if (i == poolPriceS.size()-1) {
+                            poolPriceS.add(orderPrice);
+                            break;
+                        }
                     }
                 }
             }
