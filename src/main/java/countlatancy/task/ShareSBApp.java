@@ -286,7 +286,7 @@ public class ShareSBApp implements StreamApplication {
                     poolPriceS.add(orderPrice);
                 } else {
                     for (int i = 0; i < poolPriceS.size(); i++) {
-                        if (poolPriceS.get(i) < orderPrice) {
+                        if (poolPriceS.get(i) > orderPrice) {
                             poolPriceS.add(i, orderPrice);
                             break;
                         }
