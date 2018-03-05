@@ -18,6 +18,7 @@
  */
 
 package countlatancy.task;  
+import java.util.*;
 
 /**
  * Author by Mao
@@ -28,8 +29,8 @@ class Pool {
   /**
    * The user that viewed the page
    */
-  private static final Map<Float, List<Order>> pool = new HashMap<Float, List<Order>>();
-  private static final List<Float> pricePool = new ArrayList<>();
+  private static Map<Float, List<Order>> pool = new HashMap<Float, List<Order>>();
+  private static List<Float> pricePool = new ArrayList<>();
 
   Pool(Map<Float, List<Order>> poolI, List<Float> pricePoolI) {
     this.pool = poolI;

@@ -51,8 +51,8 @@ public class ShareSBApp implements StreamApplication {
      * @return output string 
      */
     public String transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
-                              List<Float> poolPriceB, List<Float> poolPriceS, 
-                              Map<String, List<Float>> poolPrice, Map<String, List<Order>> pool, Order order) {
+                              List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
+                              Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
         int top = 0;
         int i = 0;
@@ -65,7 +65,7 @@ public class ShareSBApp implements StreamApplication {
         while (poolPriceS.get(top) <= poolPriceB.get(top)) {
             if (poolB.get(poolPriceB.get(top)).get(top).getOrderVol() > poolS.get(poolPriceS.get(top)).get(top).getOrderVol()) {
                 // B remains B_top-S_top
-                otherOrderVol = poolS.get(poolPriceS.get(top)).getOrderVol();
+                otherOrderVol = poolS.get(poolPriceS.get(top)).get(top).getOrderVol();
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 // S complete
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
@@ -254,7 +254,7 @@ public class ShareSBApp implements StreamApplication {
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 complete = "{\"result\":\"no price match, no transaction\"}";
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, pool, poolPrice, order);
+                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else if (order.getTradeDir().equals("S")) {
             float orderPrice = order.getOrderPrice();
@@ -317,7 +317,7 @@ public class ShareSBApp implements StreamApplication {
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 complete = "{\"result\":\"no price match, no transaction\"}";
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, pool, poolPrice, order);
+                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else {
             return "{\"error\":\"wrong getTradeDir\"}";
