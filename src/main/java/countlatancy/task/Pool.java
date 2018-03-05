@@ -29,8 +29,8 @@ class Pool {
   /**
    * The user that viewed the page
    */
-  private static Map<Float, List<Order>> pool = new HashMap<Float, List<Order>>();
-  private static List<Float> pricePool = new ArrayList<>();
+  private Map<Float, List<Order>> pool = new HashMap<Float, List<Order>>();
+  private List<Float> pricePool = new ArrayList<>();
 
   Pool(Map<Float, List<Order>> poolI, List<Float> pricePoolI) {
     this.pool = poolI;

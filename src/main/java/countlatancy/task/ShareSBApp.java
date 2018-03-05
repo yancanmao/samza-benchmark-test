@@ -195,14 +195,6 @@ public class ShareSBApp implements StreamApplication {
         if (poolPriceS == null) {
             poolPriceS = new ArrayList<>();
         }
-        /*System.out.println(order.getSecCode()+"S");*/
-        //for(Map.Entry(Float, List<Order>) entry : poolS.entrySet()){
-            //System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue().size());
-        //}
-        //System.out.println(order.getSecCode()+"B");
-        //for(Map.Entry(Float, List<Order>) entry : poolB.entrySet()){
-            //System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue().size());
-        /*}*/
         if (order.getTradeDir().equals("B")) {
             float orderPrice = order.getOrderPrice();
             List<Order> BorderList = poolB.get(orderPrice);
@@ -216,7 +208,19 @@ public class ShareSBApp implements StreamApplication {
                 for (int i=0; i < BorderList.size(); i++) {
                     if (orderNo.equals(BorderList.get(i).getOrderNo())) {
                         BorderList.remove(i);
-                        poolB.put(orderPrice, BorderList);
+                        // if no other price delete poolPrice
+                        if (BorderList.isEmpty()) {
+                          for (int j=0; j < poolPriceB.size(); j++) {
+                            if (poolPriceB.get(j) == orderPrice) {
+                              poolPriceB.remove(j);
+                              break;
+                            }
+                          }
+                          poolB.remove(orderPrice);
+                        } else {
+                          poolB.put(orderPrice, BorderList);
+                        }
+                        poolPrice.put(order.getSecCode()+"B", poolPriceB);
                         pool.put(order.getSecCode()+"B", poolB);
                         return "{\"result\":\"delete B order:" + orderNo+"\"}";
                     }
@@ -245,8 +249,6 @@ public class ShareSBApp implements StreamApplication {
                 }
             }
             BorderList.add(order);
-            System.out.println("order code B:"+order.getSecCode());
-            System.out.println(BorderList.size());
             poolB.put(orderPrice, BorderList);
 
             // if no elements in poolS, no transaction, add poolB
@@ -281,7 +283,19 @@ public class ShareSBApp implements StreamApplication {
                 for (int i=0; i < SorderList.size(); i++) {
                     if (orderNo.equals(SorderList.get(i).getOrderNo())) {
                         SorderList.remove(i);
-                        poolS.put(orderPrice, SorderList);
+                        // if no other price delete poolPrice
+                        if (SorderList.isEmpty()) {
+                          for (int j=0; j < poolPriceS.size(); j++) {
+                            if (poolPriceS.get(j) == orderPrice) {
+                              poolPriceS.remove(j);
+                              break;
+                            }
+                          }
+                          poolS.remove(orderPrice);
+                        } else {
+                          poolS.put(orderPrice, SorderList);
+                        }
+                        poolPrice.put(order.getSecCode()+"S", poolPriceS);
                         pool.put(order.getSecCode()+"S", poolS);
                         return "{\"result\":\"delete S order:" + orderNo+"\"}";
                     }
@@ -311,8 +325,6 @@ public class ShareSBApp implements StreamApplication {
             }
             SorderList.add(order);
             poolS.put(orderPrice, SorderList);
-            System.out.println("order code S:"+order.getSecCode());
-            System.out.println(SorderList.size());
             // if no elements in poolB, no transaction, add poolS
             if (poolPriceB.isEmpty()) {
                 pool.put(order.getSecCode()+"S", poolS);
