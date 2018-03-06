@@ -37,42 +37,65 @@ class Order {
   private static final int Sec_Code = 11;
   private static final int Trade_Dir = 22;
 
-  Order(String tuple) {
-    orderList = tuple.split("\\|");
+  private String orderNo;
+  private String tranMaintCode;
+  private String orderPrice;
+  private String orderExecVol;
+  private String orderVol;
+  private String secCode;
+  private String tradeDir;
 
+  Order(String tuple) {
+    String[] orderList = tuple.split("\\|");
+    orderNo = orderList[Order_No];
+    tranMaintCode = orderList[Tran_Maint_Code];
+    orderPrice = orderList[Order_Price];
+    orderExecVol = orderList[Order_Exec_Vol];
+    orderVol = orderList[Order_Vol];
+    secCode = orderList[Sec_Code];
+    tradeDir = orderList[Trade_Dir];
   }
 
   String getOrderNo() {
-    return this.orderList[Order_No];
+    return orderNo;
   }
   String getTranMaintCode() {
-    return this.orderList[Tran_Maint_Code];
+    return tranMaintCode;
   }
   float getOrderPrice() {
-    return Float.parseFloat(this.orderList[Order_Price]);
+    return Float.parseFloat(orderPrice);
   }
   int getOrderExecVol() {
-    Float orderExecVol = Float.parseFloat(this.orderList[Order_Exec_Vol]);
-    return orderExecVol.intValue();
+    Float interOrderExecVol = Float.parseFloat(orderExecVol);
+    return interOrderExecVol.intValue();
   }
   int getOrderVol() {
-    Float orderVol = Float.parseFloat(this.orderList[Order_Vol]);
-    return orderVol.intValue();
+    Float interOrderVol = Float.parseFloat(orderVol);
+    return interOrderVol.intValue();
   }
   String getSecCode() {
-    return this.orderList[Sec_Code];
+    return secCode;
   }
   String getTradeDir() {
-    return this.orderList[Trade_Dir];
+    return tradeDir;
   }
 
   String objToString() {
-    return String.join("|", this.orderList);
+    StringBuilder messageBuilder = new StringBuilder();
+    messageBuilder.append(orderNo).append("|");
+    messageBuilder.append(tranMaintCode).append("|");
+    messageBuilder.append(orderPrice).append("|");
+    messageBuilder.append(orderExecVol).append("|");
+    messageBuilder.append(orderVol).append("|");
+    messageBuilder.append(secCode).append("|");
+    messageBuilder.append(tradeDir);
+    return messageBuilder.toString();
+    // return String.join("|", this.orderList);
   }
 
   public boolean updateOrder(int otherOrderVol) {
-    this.orderList[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
-    this.orderList[Order_Exec_Vol] = (this.getOrderExecVol() + otherOrderVol) + "";
+    orderVol = (this.getOrderVol() - otherOrderVol) + "";
+    orderExecVol = (this.getOrderExecVol() + otherOrderVol) + "";
     return true;
   }
 }
