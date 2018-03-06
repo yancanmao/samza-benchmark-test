@@ -37,23 +37,25 @@ class Order {
   private static final int Sec_Code = 11;
   private static final int Trade_Dir = 22;
 
-  private String orderNo;
-  private String tranMaintCode;
-  private String orderPrice;
-  private String orderExecVol;
-  private String orderVol;
-  private String secCode;
-  private String tradeDir;
+  private String orderNo = new String();
+  private String tranMaintCode = new String();
+  private String orderPrice = new String();
+  private String orderExecVol = new String();
+  private String orderVol = new String();
+  private String secCode = new String();
+  private String tradeDir = new String();
 
   Order(String tuple) {
     String[] orderList = tuple.split("\\|");
     orderNo = orderList[Order_No];
     tranMaintCode = orderList[Tran_Maint_Code];
-    orderPrice = orderList[Order_Price];
-    orderExecVol = orderList[Order_Exec_Vol];
-    orderVol = orderList[Order_Vol];
-    secCode = orderList[Sec_Code];
-    tradeDir = orderList[Trade_Dir];
+    if (!tranMaintCode.equals(" ")) {
+      orderPrice = orderList[Order_Price];
+      orderExecVol = orderList[Order_Exec_Vol];
+      orderVol = orderList[Order_Vol];
+      secCode = orderList[Sec_Code];
+      tradeDir = orderList[Trade_Dir];
+    }
   }
 
   String getOrderNo() {
