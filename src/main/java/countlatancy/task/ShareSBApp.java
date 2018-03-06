@@ -51,8 +51,8 @@ public class ShareSBApp implements StreamApplication {
      * @return output string 
      */
     public String transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
-                              List<Float> poolPriceB, List<Float> poolPriceS, 
-                              Map<String, List<Float>> poolPrice, Map<String, List<Order>> pool, Order order) {
+                              List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
+                              Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
         int top = 0;
         int i = 0;
@@ -65,7 +65,7 @@ public class ShareSBApp implements StreamApplication {
         while (poolPriceS.get(top) <= poolPriceB.get(top)) {
             if (poolB.get(poolPriceB.get(top)).get(top).getOrderVol() > poolS.get(poolPriceS.get(top)).get(top).getOrderVol()) {
                 // B remains B_top-S_top
-                otherOrderVol = poolS.get(poolPriceS.get(top)).getOrderVol();
+                otherOrderVol = poolS.get(poolPriceS.get(top)).get(top).getOrderVol();
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 // S complete
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
@@ -82,6 +82,7 @@ public class ShareSBApp implements StreamApplication {
                 // no order in poolS, transaction over
                 if (poolS.get(poolPriceS.get(top)).isEmpty()) {
                     // find next price
+                    poolS.remove(poolPriceS.get(top));
                     poolPriceS.remove(top);
                     if (poolPriceS.isEmpty()) {
                         break;
@@ -104,6 +105,7 @@ public class ShareSBApp implements StreamApplication {
                 poolB.get(poolPriceB.get(top)).remove(top);
                 // no order in poolB, transaction over
                 if (poolB.get(poolPriceB.get(top)).isEmpty()) {
+                    poolB.remove(poolPriceB.get(top));
                     poolPriceB.remove(top);
                     if (poolPriceB.isEmpty()) {
                         break;
@@ -206,7 +208,19 @@ public class ShareSBApp implements StreamApplication {
                 for (int i=0; i < BorderList.size(); i++) {
                     if (orderNo.equals(BorderList.get(i).getOrderNo())) {
                         BorderList.remove(i);
-                        poolB.put(orderPrice, BorderList);
+                        // if no other price delete poolPrice
+                        if (BorderList.isEmpty()) {
+                          for (int j=0; j < poolPriceB.size(); j++) {
+                            if (poolPriceB.get(j) == orderPrice) {
+                              poolPriceB.remove(j);
+                              break;
+                            }
+                          }
+                          poolB.remove(orderPrice);
+                        } else {
+                          poolB.put(orderPrice, BorderList);
+                        }
+                        poolPrice.put(order.getSecCode()+"B", poolPriceB);
                         pool.put(order.getSecCode()+"B", poolB);
                         return "{\"result\":\"delete B order:" + orderNo+"\"}";
                     }
@@ -238,7 +252,7 @@ public class ShareSBApp implements StreamApplication {
             poolB.put(orderPrice, BorderList);
 
             // if no elements in poolS, no transaction, add poolB
-            if (poolS.isEmpty()) {
+            if (poolPriceS.isEmpty()) {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 complete = "{\"result\":\"empty poolS, no transaction\"}";
@@ -254,7 +268,7 @@ public class ShareSBApp implements StreamApplication {
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 complete = "{\"result\":\"no price match, no transaction\"}";
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, pool, poolPrice, order);
+                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else if (order.getTradeDir().equals("S")) {
             float orderPrice = order.getOrderPrice();
@@ -269,7 +283,19 @@ public class ShareSBApp implements StreamApplication {
                 for (int i=0; i < SorderList.size(); i++) {
                     if (orderNo.equals(SorderList.get(i).getOrderNo())) {
                         SorderList.remove(i);
-                        poolS.put(orderPrice, SorderList);
+                        // if no other price delete poolPrice
+                        if (SorderList.isEmpty()) {
+                          for (int j=0; j < poolPriceS.size(); j++) {
+                            if (poolPriceS.get(j) == orderPrice) {
+                              poolPriceS.remove(j);
+                              break;
+                            }
+                          }
+                          poolS.remove(orderPrice);
+                        } else {
+                          poolS.put(orderPrice, SorderList);
+                        }
+                        poolPrice.put(order.getSecCode()+"S", poolPriceS);
                         pool.put(order.getSecCode()+"S", poolS);
                         return "{\"result\":\"delete S order:" + orderNo+"\"}";
                     }
@@ -299,9 +325,8 @@ public class ShareSBApp implements StreamApplication {
             }
             SorderList.add(order);
             poolS.put(orderPrice, SorderList);
-
             // if no elements in poolB, no transaction, add poolS
-            if (poolB.isEmpty()) {
+            if (poolPriceB.isEmpty()) {
                 pool.put(order.getSecCode()+"S", poolS);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 complete = "{\"result\":\"empty poolB, no transaction\"}";
@@ -317,7 +342,7 @@ public class ShareSBApp implements StreamApplication {
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 complete = "{\"result\":\"no price match, no transaction\"}";
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, pool, poolPrice, order);
+                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else {
             return "{\"error\":\"wrong getTradeDir\"}";
@@ -335,7 +360,7 @@ public class ShareSBApp implements StreamApplication {
 
         // TODO: load pool into mem
         File dirFile = new File("/home/myc/workspace/share/opening");
-        //File dirFile = new File("/root/share/opening");
+        // File dirFile = new File("/root/share/opening");
         String[] fileList = dirFile.list();
         Map<String, Map<Float, List<Order>>> pool = new HashMap<String, Map<Float, List<Order>>>();
         Map<String, List<Float>> poolPrice = new HashMap<String, List<Float>>();
