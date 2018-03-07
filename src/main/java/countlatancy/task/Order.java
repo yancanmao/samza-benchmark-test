@@ -49,7 +49,7 @@ class Order {
     String[] orderList = tuple.split("\\|");
     orderNo = orderList[Order_No];
     tranMaintCode = orderList[Tran_Maint_Code];
-    if (!tranMaintCode.equals(" ")) {
+    if (!tranMaintCode.equals("")) {
       orderPrice = orderList[Order_Price];
       orderExecVol = orderList[Order_Exec_Vol];
       orderVol = orderList[Order_Vol];
