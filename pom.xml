@@ -185,37 +185,7 @@
     </pluginRepositories>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.rat</groupId>
-                    <artifactId>apache-rat-plugin</artifactId>
-                    <version>0.9</version>
-                    <configuration>
-                        <excludes>
-                            <exclude>*.patch</exclude>
-                            <exclude>src/main/resources/*.txt</exclude>
-                            <exclude>**/target/**</exclude>
-                            <exclude>*.json</exclude>
-                            <exclude>.vagrant/**</exclude>
-                            <exclude>.git/**</exclude>
-                            <exclude>*.md</exclude>
-                            <exclude>docs/**</exclude>
-                            <exclude>config/**</exclude>
-                            <exclude>bin/**</exclude>
-                            <exclude>.gitignore</exclude>
-                            <exclude>**/.cache/**</exclude>
-                            <exclude>deploy/**</exclude>
-                            <exclude>**/.project</exclude>
-                            <exclude>**/.gradle/**</exclude>
-                            <exclude>**/gradle/**</exclude>
-                            <exclude>**/gradlew*</exclude>
-                            <exclude>**/build/**</exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -225,19 +195,6 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>0.9</version>
-                <executions>
-                    <execution>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <!-- plugin to build the tar.gz file filled with examples -->
             <plugin>
