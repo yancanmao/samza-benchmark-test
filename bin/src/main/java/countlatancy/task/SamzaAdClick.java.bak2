@@ -1,0 +1,46 @@
+package countlatancy.task;
+
+import org.apache.samza.application.StreamApplication;
+import org.apache.samza.config.Config;
+import org.apache.samza.operators.MessageStream;
+import org.apache.samza.operators.OutputStream;
+import org.apache.samza.operators.StreamGraph;
+import org.apache.samza.operators.functions.JoinFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.function.Function;
+
+/**
+ * function join adclick
+ */
+public class SamzaAdClick implements StreamApplication {
+
+  // private static final Logger LOG = LoggerFactory.getLogger(PageViewAdClickJoiner.class);
+  private static final String INPUT_TOPIC1 = "Advertisement";
+  private static final String INPUT_TOPIC2 = "test";
+
+  private static final String OUTPUT_TOPIC = "SamzaAdvClick";
+
+  @Override
+  public void init(StreamGraph graph, Config config) {
+
+    MessageStream<String> advertisement = graph.<String, String, String>getInputStream(INPUT_TOPIC1, (k, v) -> v);
+    MessageStream<String> advClicks = graph.<String, String, String>getInputStream(INPUT_TOPIC2, (k, v) -> v);
+
+    OutputStream<String, String, String> outputStream = graph
+        .getOutputStream(OUTPUT_TOPIC, m -> "", m -> m);
+    OutputStream<String, String, String> outputStream2 = graph
+        .getOutputStream(INPUT_TOPIC2, m -> "", m -> m);
+
+    // Function<String, String> pageViewKeyFn = pageView -> new PageView(pageView).getPageId();
+    // Function<String, String> adClickKeyFn = adClick -> new AdClick(adClick).getPageId();
+
+    // MessageStream<String> pageViewRepartitioned = pageViews.partitionBy(pageViewKeyFn);
+    // MessageStream<String> adClickRepartitioned = adClicks.partitionBy(adClickKeyFn);
+
+    advertisement.sendTo(outputStream);
+    advertisement.sendTo(outputStream2);
+  }
+}

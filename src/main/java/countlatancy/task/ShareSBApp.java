@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.*;
 import java.io.*;
+import org.json.JSONObject;
 
 // test
 public class ShareSBApp implements StreamApplication {
@@ -26,6 +27,66 @@ public class ShareSBApp implements StreamApplication {
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
+
+    @Override
+    public void init(StreamGraph graph, Config config) {
+
+        String windowInterval = config.get("windowInterval", "5");
+        String groupByKey = config.get("groupByKey", "1");
+
+        MessageStream<String> orderStream = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
+
+        OutputStream<String, String, String> outputStream = graph
+            .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
+
+        // TODO: load pool into mem
+        // File dirFile = new File("/home/myc/workspace/share/opening");
+        File dirFile = new File("/root/share/opening");
+        String[] fileList = dirFile.list();
+        Map<String, Map<Float, List<Order>>> pool = new HashMap<String, Map<Float, List<Order>>>();
+        Map<String, List<Float>> poolPrice = new HashMap<String, List<Float>>();
+        for (int i = 0; i < fileList.length; i++) {
+          String fileName = fileList[i];
+          File file = new File(dirFile.getPath(),fileName);
+          Pool poolS = this.loadPool(file.getPath() +"/S.txt");
+          Pool poolB = this.loadPool(file.getPath() +"/B.txt");
+          pool.put(file.getName()+"S", poolS.getPool());
+          pool.put(file.getName()+"B", poolB.getPool());
+          poolPrice.put(file.getName()+"S", poolS.getPricePool());
+          poolPrice.put(file.getName()+"B", poolB.getPricePool());
+        }
+
+        orderStream
+          .map((tuple)->{
+            // String[] orderList = tuple.split("\\|");
+            Order order = new Order(tuple);
+            return order;
+          })
+          //.partitionBy((order)->order.getSecCode())
+          // .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
+          .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
+          .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
+          .map((order)->{
+              return this.mapFunction(pool, poolPrice, order);
+          })
+          .filter((completeOrder) -> !completeOrder.isEmpty())
+          .map((completeOrder) -> {
+              StringBuilder messageBuilder = new StringBuilder();
+              messageBuilder.append("{\"deal\":{");
+              for (int i=0; i < completeOrder.size(); i++) {
+                  messageBuilder.append("\"").append(completeOrder.get(i).getOrderNo()).append("\"")
+                                .append(":").append("\"").append(completeOrder.get(i).objToString())
+                                .append("\"").append(",");
+              }
+              messageBuilder.deleteCharAt(messageBuilder.length()-1);
+              messageBuilder.append("}");
+              messageBuilder.append("}");
+              // output complete order
+              return messageBuilder.toString();
+          })
+          // .window(Windows.tumblingWindow(Duration.ofSeconds(windowInterval), stockStats::new, new stockStatsAggregator(groupByKey)))
+          .sendTo(outputStream);
+    }
     
     /**
      * deal continous transaction
@@ -40,25 +101,30 @@ public class ShareSBApp implements StreamApplication {
         int i = 0;
         int j = 0;
         int otherOrderVol;
-        // List<String> complete = new ArrayList<>();
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("{\"deal\":{");
+        int totalVol = 0;
+        List<Order> completeOrder = new ArrayList<>();
+        // StringBuilder messageBuilder = new StringBuilder();
+        // messageBuilder.append("{\"process_no\":\"0\", \"deal\":{");
         // List<Order> completeB = new ArrayList<>();
         while (poolPriceS.get(top) <= poolPriceB.get(top)) {
             if (poolB.get(poolPriceB.get(top)).get(top).getOrderVol() > poolS.get(poolPriceS.get(top)).get(top).getOrderVol()) {
                 // B remains B_top-S_top
                 otherOrderVol = poolS.get(poolPriceS.get(top)).get(top).getOrderVol();
+                // totalVol sum
+                // totalVol += otherOrderVol;
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 // S complete
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
                 // add j to complete list
                 // complete.add(poolS.get(j).getOrderNo());
-                messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
-                              .append("\"").append(",");
-                messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
-                              .append("\"").append(",");
+                // messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
+                //               .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
+                //               .append("\"").append(",");
+                // messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
+                //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
+                //               .append("\"").append(",");
+                completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
+                completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 // remove top of poolS
                 poolS.get(poolPriceS.get(top)).remove(top);
                 // no order in poolS, transaction over
@@ -73,17 +139,21 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             } else {
                 otherOrderVol = poolB.get(poolPriceB.get(top)).get(top).getOrderVol();
+                // totalVol sum
+                // totalVol += otherOrderVol;
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
                 // add top to complete list
                 // complete.add(poolB.get(i).getOrderNo());
                 // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
-                              .append("\"").append(",");
-                messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
-                              .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
-                              .append("\"").append(",");
+                // messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
+                //               .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
+                //               .append("\"").append(",");
+                // messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
+                //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
+                //               .append("\"").append(",");
+                completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
+                completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 poolB.get(poolPriceB.get(top)).remove(top);
                 // no order in poolB, transaction over
                 if (poolB.get(poolPriceB.get(top)).isEmpty()) {
@@ -96,15 +166,18 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("}");
+        // messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        // messageBuilder.append("},");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         poolPrice.put(order.getSecCode()+"B", poolPriceB);
         poolPrice.put(order.getSecCode()+"S", poolPriceS);
-        messageBuilder.append("}");
+        // add totalVol
+        // messageBuilder.append("\"total_vol\":").append(totalVol);
+        // messageBuilder.append("}");
         // output complete order
-        return messageBuilder.toString();
+        // return messageBuilder.toString();
+        return completeOrder;
     }
 
     /**
@@ -159,7 +232,8 @@ public class ShareSBApp implements StreamApplication {
      * @return String
      */
     public String mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
-        String complete = new String();
+        // String complete = new String();
+        List<Order> completeOrder = new ArrayList<>();
         // load poolS poolB
         Map<Float, List<Order>> poolS = pool.get(order.getSecCode()+"S");
         Map<Float, List<Order>> poolB = pool.get(order.getSecCode()+"B");
@@ -185,7 +259,8 @@ public class ShareSBApp implements StreamApplication {
                 // if exist in order, remove from pool
                 String orderNo = order.getOrderNo();
                 if (BorderList == null) {
-                    return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";
+                    // return "{\"process_no\":\"11\", \"result\":\"no such B order to delete:" + orderNo+"\"}";
+                    return completeOrder;
                 }
                 for (int i=0; i < BorderList.size(); i++) {
                     if (orderNo.equals(BorderList.get(i).getOrderNo())) {
@@ -204,11 +279,13 @@ public class ShareSBApp implements StreamApplication {
                         }
                         poolPrice.put(order.getSecCode()+"B", poolPriceB);
                         pool.put(order.getSecCode()+"B", poolB);
-                        return "{\"result\":\"delete B order:" + orderNo+"\"}";
+                        // return "{\"process_no\":\"10\", \"result\":\"delete B order:" + orderNo+"\"}";
+                        return completeOrder;
                     }
                 }
                 // else output no delete order exist
-                return "{\"result\":\"no such B order to delete:" + orderNo+"\"}";              
+                // return "{\"process_no\":\"11\", \"result\":\"no such B order to delete:" + orderNo+"\"}";
+                return completeOrder;             
              }
             
             // put into buy poolB
@@ -237,8 +314,9 @@ public class ShareSBApp implements StreamApplication {
             if (poolPriceS.isEmpty()) {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                complete = "{\"result\":\"empty poolS, no transaction\"}";
-                return complete;
+                // complete = "{\"process_no\":\"2\", \"result\":\"empty poolS, no transaction\"}";
+                // return complete;
+                return completeOrder;             
             }
 
             // no satisfied price
@@ -248,9 +326,10 @@ public class ShareSBApp implements StreamApplication {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                complete = "{\"result\":\"no price match, no transaction\"}";
+                // complete = "{\"process_no\":\"3\", \"result\":\"no price match, no transaction\"}";
+                return completeOrder;
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
+                completeOrder = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else if (order.getTradeDir().equals("S")) {
             float orderPrice = order.getOrderPrice();
@@ -260,7 +339,8 @@ public class ShareSBApp implements StreamApplication {
                 // if exist in order, remove from pool
                 String orderNo = order.getOrderNo();
                 if (SorderList == null) {
-                    return "{\"result\":\"no such S order to delete:" + orderNo+"\"}";
+                    // return "{\"process_no\":\"11\", \"result\":\"no such S order to delete:" + orderNo+"\"}";
+                    return completeOrder;
                 }
                 for (int i=0; i < SorderList.size(); i++) {
                     if (orderNo.equals(SorderList.get(i).getOrderNo())) {
@@ -279,11 +359,13 @@ public class ShareSBApp implements StreamApplication {
                         }
                         poolPrice.put(order.getSecCode()+"S", poolPriceS);
                         pool.put(order.getSecCode()+"S", poolS);
-                        return "{\"result\":\"delete S order:" + orderNo+"\"}";
+                        // return "{\"process_no\":\"10\", \"result\":\"delete S order:" + orderNo+"\"}";
+                        return completeOrder;
                     }
                 }
                 // else output no delete order exist
-                return "{\"result\":\"no such S order to delete:" + orderNo+"\"}";
+                // return "{\"process_no\":\"11\", \"result\":\"no such S order to delete:" + orderNo+"\"}";
+                return completeOrder;
             }
             
             // put into buy poolS
@@ -311,8 +393,9 @@ public class ShareSBApp implements StreamApplication {
             if (poolPriceB.isEmpty()) {
                 pool.put(order.getSecCode()+"S", poolS);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
-                complete = "{\"result\":\"empty poolB, no transaction\"}";
-                return complete;
+                // complete = "{\"process_no\":\"2\", \"result\":\"empty poolB, no transaction\"}";
+                // return complete;
+                return completeOrder;
             }
             
             // no satisfied price
@@ -322,55 +405,73 @@ public class ShareSBApp implements StreamApplication {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                complete = "{\"result\":\"no price match, no transaction\"}";
+                // complete = "{\"process_no\":\"3\", \"result\":\"no price match, no transaction\"}";
+                return completeOrder;
             } else {
-                complete = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
+                completeOrder = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else {
-            return "{\"error\":\"wrong getTradeDir\"}";
+            return "{\"process_no\":\"4\", \"error\":\"wrong getTradeDir\"}";
         }
-        return complete;
+        return completeOrder;
     }
 
-    @Override
-    public void init(StreamGraph graph, Config config) {
+    // /**
+    //  * A few statistics about the incoming messages.
+    //  */
+    // private static class stockStats {
+    //     int totalTradeNum = 0;
+    //     String tradeOrder = new String();
+    //     String deleteOrder = new String();
+    //     @Override
+    //     public String toString() {
+    //         // TODO: format output
+    //         return String.format("Stats {totalTradeNum:%d, tradeOrder:%s, deleteOrder:%s}", totalTradeNum, tradeOrder, deleteOrder);
+    //     }
+    // }
 
-        MessageStream<String> orderStream = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
+    // /**
+    //  * aggregate statistics
+    //  * 1. group by key
+    //  * 2. count transaction order
+    //  * 3. sum transaction number
+    //  * 4. compute average price
+    //  * 5. get minimum price\trade number
+    //  */
+    // private class stockStatsAggregator implements FoldLeftFunction<String, stockStats> {
 
-        OutputStream<String, String, String> outputStream = graph
-            .getOutputStream(OUTPUT_TOPIC, m -> null, m -> m);
+    //     private String key = new String();
+        
+    //     stockStatsAggregator(String groupByKey) {
+    //         this.key = groupByKey;
+    //     }
+        
+    //     @Override
+    //     public void init(Config config, TaskContext context) {
+    //         // TODO: analyse if need these factor
+    //         // store = (KeyValueStore<String, Integer>) context.getStore(STATS_STORE_NAME);
+    //         // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
+    //     }
 
-        // TODO: load pool into mem
-        // File dirFile = new File("/home/myc/workspace/share/opening");
-        File dirFile = new File("/root/share/opening");
-        String[] fileList = dirFile.list();
-        Map<String, Map<Float, List<Order>>> pool = new HashMap<String, Map<Float, List<Order>>>();
-        Map<String, List<Float>> poolPrice = new HashMap<String, List<Float>>();
-        for (int i = 0; i < fileList.length; i++) {
-          String fileName = fileList[i];
-          File file = new File(dirFile.getPath(),fileName);
-          Pool poolS = this.loadPool(file.getPath() +"/S.txt");
-          Pool poolB = this.loadPool(file.getPath() +"/B.txt");
-          pool.put(file.getName()+"S", poolS.getPool());
-          pool.put(file.getName()+"B", poolB.getPool());
-          poolPrice.put(file.getName()+"S", poolS.getPricePool());
-          poolPrice.put(file.getName()+"B", poolB.getPricePool());
-        }
+    //     public Map<String, String> apply(String edit, stockStats stats) {
+    //         // TODO: aggregate statistics
+    //         JSONObject jsonObject = new JSONObject(edit);
+    //         // transaction happened 
+    //         if (jsonObject.getInt("process_no") == 0) {
+    //             stockStats.totalTradeNum = jsonObject.get("total_vol");
+    //         }
 
-        orderStream
-          .map((tuple)->{
-            // String[] orderList = tuple.split("\\|");
-            Order order = new Order(tuple);
-            return order;
-          })
-          //.partitionBy((order)->order.getSecCode())
-          // .filter((order) -> !FILTER_KEY1.equals(order.getTranMaintCode()))
-          .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
-          .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
-          .map((order)->{
-              return this.mapFunction(pool, poolPrice, order);
-          })
-          .sendTo(outputStream);
-    }
+    //     }
+    // }
+
+    // /**
+    //  * Format the stats for output to Kafka.
+    //  */
+    // private Map<String, Integer> formatOutput(WindowPane<Void, Map<String, String>> statsWindowPane) {
+
+    //     WikipediaStats stats = statsWindowPane.getMessage();
+
+    //     // TODO: construct stats
+    // }
 }
 
