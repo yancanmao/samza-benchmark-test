@@ -93,7 +93,7 @@ public class ShareSBApp implements StreamApplication {
      * @param poolB,poolS,pool,order
      * @return output string 
      */
-    public String transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
+    public List<Order> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
                               List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
                               Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
@@ -231,7 +231,7 @@ public class ShareSBApp implements StreamApplication {
      * @param pool, order
      * @return String
      */
-    public String mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
+    public List<Order> mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
         // String complete = new String();
         List<Order> completeOrder = new ArrayList<>();
         // load poolS poolB
@@ -410,8 +410,6 @@ public class ShareSBApp implements StreamApplication {
             } else {
                 completeOrder = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
-        } else {
-            return "{\"process_no\":\"4\", \"error\":\"wrong getTradeDir\"}";
         }
         return completeOrder;
     }
