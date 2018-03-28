@@ -28,7 +28,7 @@ class Order {
   private String orderVol = new String();
   private String secCode = new String();
   private String tradeDir = new String();
-  private Map<String, String> orderMap = new HashMap<String, String>();
+  // private Map<String, String> orderMap = new HashMap<String, String>();
 
   Order(String tuple) {
     //String[] orderList = tuple.split("\\|");
@@ -40,13 +40,13 @@ class Order {
       orderVol = new String(tuple.split("\\|")[Order_Vol]);
       secCode = new String(tuple.split("\\|")[Sec_Code]);
       tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
-      orderMap.put("Order_No", orderNo);
-      orderMap.put("Tran_Maint_Code", tranMaintCode);
-      orderMap.put("Order_Price", orderPrice);
-      orderMap.put("Order_Exec_Vol", orderExecVol);
-      orderMap.put("Order_Vol", orderVol);
-      orderMap.put("Sec_Code", secCode);
-      orderMap.put("Trade_Dir", tradeDir);
+      //orderMap.put("Order_No", orderNo);
+      //orderMap.put("Tran_Maint_Code", tranMaintCode);
+      //orderMap.put("Order_Price", orderPrice);
+      //orderMap.put("Order_Exec_Vol", orderExecVol);
+      //orderMap.put("Order_Vol", orderVol);
+      //orderMap.put("Sec_Code", secCode);
+      //orderMap.put("Trade_Dir", tradeDir);
     }
   }
 
@@ -74,9 +74,9 @@ class Order {
     return tradeDir;
   }
 
-  String getKey(String key) {
-    return orderMap.get(key);
-  }
+  //String getKey(String key) {
+    //return orderMap.get(key);
+  //}
 
   String objToString() {
     StringBuilder messageBuilder = new StringBuilder();
