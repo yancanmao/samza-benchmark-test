@@ -8,6 +8,7 @@ import org.apache.samza.operators.StreamGraph;
 import org.apache.samza.operators.functions.FoldLeftFunction;
 import org.apache.samza.operators.windows.WindowPane;
 import org.apache.samza.operators.windows.Windows;
+import org.apache.samza.task.TaskContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -409,7 +410,7 @@ public class ShareSBApp implements StreamApplication {
      * @param completeOrder
      * @return String
      */
-    public String listToString(list<order> completeOrder) {
+    public String listToString(List<Order> completeOrder) {
         StringBuilder messageBuilder = new StringBuilder();
         messageBuilder.append("{\"deal\":{");
         for (int i=0; i < completeOrder.size(); i++) {
@@ -451,7 +452,7 @@ public class ShareSBApp implements StreamApplication {
      * 4. compute average price
      * 5. get minimum price\trade number
      */
-    private class stockStatsAggregator implements FoldLeftFunction<list<order>, stockStats> {
+    private class stockStatsAggregator implements FoldLeftFunction<List<Order>, stockStats> {
 
         private String key = new String();
         
@@ -466,7 +467,7 @@ public class ShareSBApp implements StreamApplication {
             // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
         }
 
-        public Map<String, String> apply(list<order> completeOrder, stockStats stats) {
+        public Map<String, String> apply(List<Order> completeOrder, stockStats stats) {
             // TODO: according to key, create a map to save the group result
             Map<String, List<Order>> groupRes = groupBy(completeOrder, this.key);
             // TODO: according to group result, do statistics
@@ -499,7 +500,7 @@ public class ShareSBApp implements StreamApplication {
             StringBuilder messageBuilder = new StringBuilder();
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
                 // countList.put(entry.getKey(), entry.getValue().size());
-                messageBuilder.append(entry.getKey()).append(":").append(entry.getValue().size()).append(";");
+                messageBuilder.append(entry.getKey()).append(":").append(String.valueOf(entry.getValue().size())).append(";");
             }
             return messageBuilder.toString();
         }
@@ -507,10 +508,12 @@ public class ShareSBApp implements StreamApplication {
         public Integer tradeNum(Map<String, List<Order>> groupRes){
             int orderNum = 0;
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-                if (entry.getValue().get(i).getOrderVol() != 0) {
-                    continue;
+                for (int i=0; i < entry.getValue().size(); i++) {
+                    if (entry.getValue().get(i).getOrderVol() != 0) {
+                        continue;
+                    }
+                    orderNum += entry.getValue().get(i).getOrderExecVol();
                 }
-                orderNum += entry.getValue().get(i).getOrderVol();
             }
             return orderNum;
         }
