@@ -1,5 +1,8 @@
 package countlatancy.task;  
 
+import java.util.Map;
+import java.util.HashMap;;
+
 /**
  * Author by Mao
  * kmeans data structure, and some operator
@@ -18,42 +21,79 @@ class Order {
   private static final int Sec_Code = 11;
   private static final int Trade_Dir = 22;
 
-  Order(String tuple) {
-    orderList = tuple.split("\\|");
+  private String orderNo = new String();
+  private String tranMaintCode = new String();
+  private String orderPrice = new String();
+  private String orderExecVol = new String();
+  private String orderVol = new String();
+  private String secCode = new String();
+  private String tradeDir = new String();
+  private Map<String, String> orderMap = new HashMap<String, String>();
 
+  Order(String tuple) {
+    String[] orderList = tuple.split("\\|");
+    orderNo = orderList[Order_No];
+    tranMaintCode = orderList[Tran_Maint_Code];
+    if (!tranMaintCode.equals("")) {
+      orderPrice = orderList[Order_Price];
+      orderExecVol = orderList[Order_Exec_Vol];
+      orderVol = orderList[Order_Vol];
+      secCode = orderList[Sec_Code];
+      tradeDir = orderList[Trade_Dir];
+      orderMap.put("Order_No", orderNo);
+      orderMap.put("Tran_Maint_Code", tranMaintCode);
+      orderMap.put("Order_Price", orderPrice);
+      orderMap.put("Order_Exec_Vol", orderExecVol);
+      orderMap.put("Order_Vol", orderVol);
+      orderMap.put("Sec_Code", secCode);
+      orderMap.put("Trade_Dir", tradeDir);
+    }
   }
 
   String getOrderNo() {
-    return this.orderList[Order_No];
+    return orderNo;
   }
   String getTranMaintCode() {
-    return this.orderList[Tran_Maint_Code];
+    return tranMaintCode;
   }
   float getOrderPrice() {
-    return Float.parseFloat(this.orderList[Order_Price]);
+    return Float.parseFloat(orderPrice);
   }
   int getOrderExecVol() {
-    Float orderExecVol = Float.parseFloat(this.orderList[Order_Exec_Vol]);
-    return orderExecVol.intValue();
+    Float interOrderExecVol = Float.parseFloat(orderExecVol);
+    return interOrderExecVol.intValue();
   }
   int getOrderVol() {
-    Float orderVol = Float.parseFloat(this.orderList[Order_Vol]);
-    return orderVol.intValue();
+    Float interOrderVol = Float.parseFloat(orderVol);
+    return interOrderVol.intValue();
   }
   String getSecCode() {
-    return this.orderList[Sec_Code];
+    return secCode;
   }
   String getTradeDir() {
-    return this.orderList[Trade_Dir];
+    return tradeDir;
+  }
+
+  String getKey(String key) {
+    return orderMap.get(key);
   }
 
   String objToString() {
-    return String.join("|", this.orderList);
+    StringBuilder messageBuilder = new StringBuilder();
+    messageBuilder.append(orderNo).append("|");
+    messageBuilder.append(tranMaintCode).append("|");
+    messageBuilder.append(orderPrice).append("|");
+    messageBuilder.append(orderExecVol).append("|");
+    messageBuilder.append(orderVol).append("|");
+    messageBuilder.append(secCode).append("|");
+    messageBuilder.append(tradeDir);
+    return messageBuilder.toString();
+    // return String.join("|", this.orderList);
   }
 
   public boolean updateOrder(int otherOrderVol) {
-    this.orderList[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
-    this.orderList[Order_Exec_Vol] = (this.getOrderExecVol() + otherOrderVol) + "";
+    orderVol = (this.getOrderVol() - otherOrderVol) + "";
+    orderExecVol = (this.getOrderExecVol() + otherOrderVol) + "";
     return true;
   }
 }

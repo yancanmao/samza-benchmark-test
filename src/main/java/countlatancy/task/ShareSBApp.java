@@ -32,7 +32,7 @@ public class ShareSBApp implements StreamApplication {
     public void init(StreamGraph graph, Config config) {
 
         String windowInterval = config.get("windowInterval", "5");
-        String groupByKey = config.get("groupByKey", "1");
+        String groupByKey = config.get("groupByKey", "Sec_Code");
 
         MessageStream<String> orderStream = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
@@ -70,21 +70,10 @@ public class ShareSBApp implements StreamApplication {
               return this.mapFunction(pool, poolPrice, order);
           })
           .filter((completeOrder) -> !completeOrder.isEmpty())
-          .map((completeOrder) -> {
-              StringBuilder messageBuilder = new StringBuilder();
-              messageBuilder.append("{\"deal\":{");
-              for (int i=0; i < completeOrder.size(); i++) {
-                  messageBuilder.append("\"").append(completeOrder.get(i).getOrderNo()).append("\"")
-                                .append(":").append("\"").append(completeOrder.get(i).objToString())
-                                .append("\"").append(",");
-              }
-              messageBuilder.deleteCharAt(messageBuilder.length()-1);
-              messageBuilder.append("}");
-              messageBuilder.append("}");
-              // output complete order
-              return messageBuilder.toString();
-          })
-          // .window(Windows.tumblingWindow(Duration.ofSeconds(windowInterval), stockStats::new, new stockStatsAggregator(groupByKey)))
+          // .map((completeOrder) -> {
+          //     return this.listToString(completeOrder);
+          // })
+          .window(Windows.tumblingWindow(Duration.ofSeconds(windowInterval), stockStats::new, new stockStatsAggregator(groupByKey)))
           .sendTo(outputStream);
     }
     
@@ -414,62 +403,138 @@ public class ShareSBApp implements StreamApplication {
         return completeOrder;
     }
 
-    // /**
-    //  * A few statistics about the incoming messages.
-    //  */
-    // private static class stockStats {
-    //     int totalTradeNum = 0;
-    //     String tradeOrder = new String();
-    //     String deleteOrder = new String();
-    //     @Override
-    //     public String toString() {
-    //         // TODO: format output
-    //         return String.format("Stats {totalTradeNum:%d, tradeOrder:%s, deleteOrder:%s}", totalTradeNum, tradeOrder, deleteOrder);
-    //     }
-    // }
+    /**
+     * listToString
+     * @param completeOrder
+     * @return String
+     */
+    public String listToString(list<order> completeOrder) {
+        StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("{\"deal\":{");
+        for (int i=0; i < completeOrder.size(); i++) {
+            messageBuilder.append("\"").append(completeOrder.get(i).getOrderNo()).append("\"")
+                          .append(":").append("\"").append(completeOrder.get(i).objToString())
+                          .append("\"").append(",");
+        }
+        messageBuilder.deleteCharAt(messageBuilder.length()-1);
+        messageBuilder.append("}");
+        messageBuilder.append("}");
+        // output complete order
+        return messageBuilder.toString();
+    }
 
-    // /**
-    //  * aggregate statistics
-    //  * 1. group by key
-    //  * 2. count transaction order
-    //  * 3. sum transaction number
-    //  * 4. compute average price
-    //  * 5. get minimum price\trade number
-    //  */
-    // private class stockStatsAggregator implements FoldLeftFunction<String, stockStats> {
+    /**
+     * A few statistics about the incoming messages.
+     */
+    private static class stockStats {
+        int totalTradeNum = 0;
+        float minimum = new Float();
+        String tradeOrder = new String();
+        String deleteOrder = new String();
+        Map<String, Integer> countList = new HashMap<String, Integer>();
+        Map<String, Double> avgPriceList = new HashMap<String, Double>();
+        @Override
+        public String toString() {
+            // TODO: format output
+            return String.format("Stats {totalTradeNum:%d, tradeOrder:%s, deleteOrder:%s}", totalTradeNum, tradeOrder, deleteOrder);
+        }
+    }
 
-    //     private String key = new String();
+    /**
+     * aggregate statistics
+     * 1. group by key
+     * 2. count transaction order
+     * 3. sum transaction number
+     * 4. compute average price
+     * 5. get minimum price\trade number
+     */
+    private class stockStatsAggregator implements FoldLeftFunction<list<order>, stockStats> {
+
+        private String key = new String();
         
-    //     stockStatsAggregator(String groupByKey) {
-    //         this.key = groupByKey;
-    //     }
+        stockStatsAggregator(String groupByKey) {
+            key = groupByKey;
+        }
         
-    //     @Override
-    //     public void init(Config config, TaskContext context) {
-    //         // TODO: analyse if need these factor
-    //         // store = (KeyValueStore<String, Integer>) context.getStore(STATS_STORE_NAME);
-    //         // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
-    //     }
+        @Override
+        public void init(Config config, TaskContext context) {
+            // TODO: analyse if need these factor
+            // store = (KeyValueStore<String, Integer>) context.getStore(STATS_STORE_NAME);
+            // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
+        }
 
-    //     public Map<String, String> apply(String edit, stockStats stats) {
-    //         // TODO: aggregate statistics
-    //         JSONObject jsonObject = new JSONObject(edit);
-    //         // transaction happened 
-    //         if (jsonObject.getInt("process_no") == 0) {
-    //             stockStats.totalTradeNum = jsonObject.get("total_vol");
-    //         }
+        public Map<String, String> apply(list<order> completeOrder, stockStats stats) {
+            // TODO: according to key, create a map to save the group result
+            Map<String, List<Order>> groupRes = groupBy(completeOrder, this.key);
+            // TODO: according to group result, do statistics
+            stats.countList = count(groupRes);
+            stats.avgPriceList = averagePrice(groupRes);
+            stats.minimum = minimum(groupRes);
+            return stats;
+        }
+        public Map<String, List<Order>> groupBy(List<Order> completeOrder, String key){
+            Map<String, List<Order>> groupMap = new HashMap<String, List<Order>>();
+            String orderKey = new String();
+            List<Order> orderList = new ArrayList<>();
+            //  construct gourpMap
+            for (int i=0; i < completeOrder.size(); i++) {
+                if ((orderKey = completeOrder.get(i).getKey(key)) == null) {
+                    continue;
+                }
+                if (groupMap.get(orderKey) != null) {
+                    orderList = groupMap.get(orderKey);
+                }
+                orderList.add(completeOrder.get(i));
+                groupMap.put(orderKey, orderList);
+            }
+            return groupMap;
+        }
 
-    //     }
-    // }
+        public Map<String, Integer> count(Map<String, List<Order>> groupRes){
+            Map<String, Integer> countList = new HashMap<String, Integer>();
+            for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
+                countList.put(entry.key(), entry.value().size());
+            }
+            return countList;
+        }
 
-    // /**
-    //  * Format the stats for output to Kafka.
-    //  */
-    // private Map<String, Integer> formatOutput(WindowPane<Void, Map<String, String>> statsWindowPane) {
+        public float minimum(Map<String, List<Order>> groupRes){
+            float min = new Float(1000);
+            for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
+                for (int i=0; i < entry.value().size(); i++) {
+                    if (entry.value().get(i).getOrderPrice() < min) {
+                        min = entry.value().get(i).getOrderPrice();
+                    }
+                }
+            }
+            return min;
+        }
 
-    //     WikipediaStats stats = statsWindowPane.getMessage();
+        public Map<String, Double> averagePrice(Map<String, List<Order>> groupRes){
+            Map<String, Double> avgPriceList = new HashMap<String, Double>();
+            Double totalOrderPrice = new Double();
+            int totalOrderVol = 0;
+            for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
+                totalOrderPrice = 0;
+                totalOrderVol = 0;
+                for (int i=0; i < entry.value().size(); i++) {
+                    totalOrderVol += entry.value().get(i).getOrderVol();
+                    totalOrderPrice += entry.value().get(i).getOrderPrice() * entry.value().get(i).getOrderVol();
+                }
+                avgPriceList.put(entry.key() , totalOrderPrice/totalOrderVol);
+            }
+            return avgPriceList;
+        }
+    }
 
-    //     // TODO: construct stats
-    // }
+    /**
+     * Format the stats for output to Kafka.
+     */
+    private Map<String, Integer> formatOutput(WindowPane<Void, Map<String, String>> statsWindowPane) {
+
+        WikipediaStats stats = statsWindowPane.getMessage();
+
+        // TODO: construct stats
+    }
 }
 
