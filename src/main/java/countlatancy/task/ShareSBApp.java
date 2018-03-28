@@ -468,7 +468,7 @@ public class ShareSBApp implements StreamApplication {
         }
 
         @Override
-        public Map<String, String> apply(List<Order> completeOrder, stockStats stats) {
+        public stockStats apply(List<Order> completeOrder, stockStats stats) {
             // TODO: according to key, create a map to save the group result
             Map<String, List<Order>> groupRes = groupBy(completeOrder, this.key);
             // TODO: according to group result, do statistics
