@@ -498,8 +498,8 @@ public class ShareSBApp implements StreamApplication {
             // Map<String, Integer> countList = new HashMap<String, Integer>();
             StringBuilder messageBuilder = new StringBuilder();
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-                // countList.put(entry.key(), entry.value().size());
-                messageBuilder.append(entry.key()).append(":").append(entry.value().size()).append(";");
+                // countList.put(entry.getKey(), entry.getValue().size());
+                messageBuilder.append(entry.getKey()).append(":").append(entry.getValue().size()).append(";");
             }
             return messageBuilder.toString();
         }
@@ -507,10 +507,10 @@ public class ShareSBApp implements StreamApplication {
         public Integer tradeNum(Map<String, List<Order>> groupRes){
             int orderNum = 0;
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-                if (entry.value().get(i).getOrderVol() != 0) {
+                if (entry.getValue().get(i).getOrderVol() != 0) {
                     continue;
                 }
-                orderNum += entry.value().get(i).getOrderVol();
+                orderNum += entry.getValue().get(i).getOrderVol();
             }
             return orderNum;
         }
@@ -518,9 +518,9 @@ public class ShareSBApp implements StreamApplication {
         public float minimum(Map<String, List<Order>> groupRes){
             float min = new Float(1000);
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-                for (int i=0; i < entry.value().size(); i++) {
-                    if (entry.value().get(i).getOrderPrice() < min) {
-                        min = entry.value().get(i).getOrderPrice();
+                for (int i=0; i < entry.getValue().size(); i++) {
+                    if (entry.getValue().get(i).getOrderPrice() < min) {
+                        min = entry.getValue().get(i).getOrderPrice();
                     }
                 }
             }
@@ -536,15 +536,15 @@ public class ShareSBApp implements StreamApplication {
             for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
                 totalOrderPrice = 0;
                 totalOrderVol = 0;
-                for (int i=0; i < entry.value().size(); i++) {
-                    if (entry.value().get(i).getOrderVol() != 0) {
+                for (int i=0; i < entry.getValue().size(); i++) {
+                    if (entry.getValue().get(i).getOrderVol() != 0) {
                         continue;
                     }
-                    totalOrderVol += entry.value().get(i).getOrderExecVol();
-                    totalOrderPrice += entry.value().get(i).getOrderPrice() * entry.value().get(i).getOrderExecVol();
+                    totalOrderVol += entry.getValue().get(i).getOrderExecVol();
+                    totalOrderPrice += entry.getValue().get(i).getOrderPrice() * entry.getValue().get(i).getOrderExecVol();
                 }
-                // avgPriceList.put(entry.key() , totalOrderPrice/totalOrderVol);
-                messageBuilder.append(entry.key()).append(":").append(String.valueOf(totalOrderPrice/totalOrderVol)).append(";");
+                // avgPriceList.put(entry.getKey() , totalOrderPrice/totalOrderVol);
+                messageBuilder.append(entry.getKey()).append(":").append(String.valueOf(totalOrderPrice/totalOrderVol)).append(";");
             }
             return messageBuilder.toString();
         }
