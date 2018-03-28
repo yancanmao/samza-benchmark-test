@@ -544,7 +544,7 @@ public class ShareSBApp implements StreamApplication {
                     totalOrderPrice += entry.value().get(i).getOrderPrice() * entry.value().get(i).getOrderExecVol();
                 }
                 // avgPriceList.put(entry.key() , totalOrderPrice/totalOrderVol);
-                messageBuilder.append(entry.key()).append(":")).append(String.valueOf(totalOrderPrice/totalOrderVol)).append(";");
+                messageBuilder.append(entry.key()).append(":").append(String.valueOf(totalOrderPrice/totalOrderVol)).append(";");
             }
             return messageBuilder.toString();
         }
