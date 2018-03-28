@@ -31,15 +31,15 @@ class Order {
   private Map<String, String> orderMap = new HashMap<String, String>();
 
   Order(String tuple) {
-    String[] orderList = tuple.split("\\|");
-    orderNo = orderList[Order_No];
-    tranMaintCode = orderList[Tran_Maint_Code];
+    //String[] orderList = tuple.split("\\|");
+    orderNo = new String(tuple.split("\\|")[Order_No]);
+    tranMaintCode = new String(tuple.split("\\|")[Tran_Maint_Code]);
     if (!tranMaintCode.equals("")) {
-      orderPrice = orderList[Order_Price];
-      orderExecVol = orderList[Order_Exec_Vol];
-      orderVol = orderList[Order_Vol];
-      secCode = orderList[Sec_Code];
-      tradeDir = orderList[Trade_Dir];
+      orderPrice = new String(tuple.split("\\|")[Order_Price]);
+      orderExecVol = new String(tuple.split("\\|")[Order_Exec_Vol]);
+      orderVol = new String(tuple.split("\\|")[Order_Vol]);
+      secCode = new String(tuple.split("\\|")[Sec_Code]);
+      tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
       orderMap.put("Order_No", orderNo);
       orderMap.put("Tran_Maint_Code", tranMaintCode);
       orderMap.put("Order_Price", orderPrice);
