@@ -32,7 +32,7 @@ public class ShareSBApp implements StreamApplication {
     @Override
     public void init(StreamGraph graph, Config config) {
 
-        String windowInterval = config.get("windowInterval", "5");
+        String windowInterval = config.get("windowInterval", "3");
         String groupByKey = config.get("groupByKey", "Sec_Code");
 
         MessageStream<String> orderStream = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
@@ -472,7 +472,7 @@ public class ShareSBApp implements StreamApplication {
             // TODO: according to key, create a map to save the group result
             Map<String, List<Order>> groupRes = groupBy(completeOrder, this.key);
             // TODO: according to group result, do statistics
-            stats.totalTradeNum += tradeNum(groupRes);
+            // stats.totalTradeNum += tradeNum(groupRes);
             stats.countList = count(groupRes);
             // stats.avgPriceList = averagePrice(groupRes);
             // stats.minimum = minimum(groupRes);
@@ -489,6 +489,8 @@ public class ShareSBApp implements StreamApplication {
                 }
                 if (groupMap.get(orderKey) != null) {
                     orderList = groupMap.get(orderKey);
+                } else {
+                    orderList = new ArrayList<>();
                 }
                 orderList.add(completeOrder.get(i));
                 groupMap.put(orderKey, orderList);
