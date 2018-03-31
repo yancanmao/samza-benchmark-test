@@ -434,7 +434,7 @@ public class ShareSBApp implements StreamApplication {
         // String tradeOrder = new String();
         // String deleteOrder = new String();
         Map<String, Integer> countList = new HashMap<String, Integer>();
-        Map<String, Double> avgPriceList = new HashMap<String, Double>();
+        Map<String, Float> avgPriceList = new HashMap<String, Float>();
         // String countList = new String(); 
         // String avgPriceList = new String(); 
         @Override
@@ -503,8 +503,9 @@ public class ShareSBApp implements StreamApplication {
             // stats.countList = count(groupRes);
             // stats.avgPriceList = averagePrice(groupRes);
             // stats.minimum = minimum(groupRes);
+            String orderKey = new String();
             int count = 0;
-            int tradeNum = 0;
+            //int tradeNum = 0;
             float averagePrice = 0;
             for (int i=0; i < completeOrder.size(); i++) {
                 if ((orderKey = completeOrder.get(i).getKey(key)) == null) {
@@ -520,7 +521,7 @@ public class ShareSBApp implements StreamApplication {
                 stats.countList.put(orderKey, count);
                 // tradeNum aggregate
                 if (completeOrder.get(i).getOrderVol() == 0) {
-                    stats.tradeNum += completeOrder.get(i).getOrderExecVol();
+                    stats.totalTradeNum += completeOrder.get(i).getOrderExecVol();
                 }
                 // average order price
                 if (stats.avgPriceList.get(orderKey) != null) {
