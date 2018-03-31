@@ -115,7 +115,7 @@ public class ShareSBApp implements StreamApplication {
                 //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
                 //               .append("\"").append(",");
                 completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
-                completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
+                // completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 // remove top of poolS
                 poolS.get(poolPriceS.get(top)).remove(top);
                 // no order in poolS, transaction over
@@ -143,7 +143,7 @@ public class ShareSBApp implements StreamApplication {
                 // messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
                 //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
                 //               .append("\"").append(",");
-                completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
+                // completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
                 completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 poolB.get(poolPriceB.get(top)).remove(top);
                 // no order in poolB, transaction over

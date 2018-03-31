@@ -21,57 +21,57 @@ class Order {
   private static final int Sec_Code = 11;
   private static final int Trade_Dir = 22;
 
-  private String orderNo = new String();
-  private String tranMaintCode = new String();
-  private String orderPrice = new String();
-  private String orderExecVol = new String();
-  private String orderVol = new String();
-  private String secCode = new String();
-  private String tradeDir = new String();
+  // private String orderNo = new String();
+  // private String tranMaintCode = new String();
+  // private String orderPrice = new String();
+  // private String orderExecVol = new String();
+  // private String orderVol = new String();
+  // private String secCode = new String();
+  // private String tradeDir = new String();
   private Map<String, String> orderMap = new HashMap<String, String>();
 
   Order(String tuple) {
     //String[] orderList = tuple.split("\\|");
-    orderNo = new String(tuple.split("\\|")[Order_No]);
-    tranMaintCode = new String(tuple.split("\\|")[Tran_Maint_Code]);
+    String orderNo = new String(tuple.split("\\|")[Order_No]);
+    String tranMaintCode = new String(tuple.split("\\|")[Tran_Maint_Code]);
     if (!tranMaintCode.equals("")) {
-      orderPrice = new String(tuple.split("\\|")[Order_Price]);
-      orderExecVol = new String(tuple.split("\\|")[Order_Exec_Vol]);
-      orderVol = new String(tuple.split("\\|")[Order_Vol]);
-      secCode = new String(tuple.split("\\|")[Sec_Code]);
-      tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
+      // orderPrice = new String(tuple.split("\\|")[Order_Price]);
+      // orderExecVol = new String(tuple.split("\\|")[Order_Exec_Vol]);
+      // orderVol = new String(tuple.split("\\|")[Order_Vol]);
+      // secCode = new String(tuple.split("\\|")[Sec_Code]);
+      // tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
       orderMap.put("Order_No", orderNo);
       orderMap.put("Tran_Maint_Code", tranMaintCode);
-      orderMap.put("Order_Price", orderPrice);
-      orderMap.put("Order_Exec_Vol", orderExecVol);
-      orderMap.put("Order_Vol", orderVol);
-      orderMap.put("Sec_Code", secCode);
-      orderMap.put("Trade_Dir", tradeDir);
+      orderMap.put("Order_Price", new String(tuple.split("\\|")[Order_Price]);
+      orderMap.put("Order_Exec_Vol", new String(tuple.split("\\|")[Order_Exec_Vol]));
+      orderMap.put("Order_Vol", new String(tuple.split("\\|")[Order_Vol]));
+      orderMap.put("Sec_Code", new String(tuple.split("\\|")[Sec_Code]));
+      orderMap.put("Trade_Dir", new String(tuple.split("\\|")[Trade_Dir]));
     }
   }
 
   String getOrderNo() {
-    return orderNo;
+    return orderMap.get("Order_No");
   }
   String getTranMaintCode() {
-    return tranMaintCode;
+    return orderMap.get("Tran_Maint_Code");
   }
   float getOrderPrice() {
-    return Float.parseFloat(orderPrice);
+    return Float.parseFloat(orderMap.get("Order_Price"));
   }
   int getOrderExecVol() {
-    Float interOrderExecVol = Float.parseFloat(orderExecVol);
+    Float interOrderExecVol = Float.parseFloat(orderMap.get("Order_Exec_Vol"));
     return interOrderExecVol.intValue();
   }
   int getOrderVol() {
-    Float interOrderVol = Float.parseFloat(orderVol);
+    Float interOrderVol = Float.parseFloat(orderMap.get("Order_Vol"));
     return interOrderVol.intValue();
   }
   String getSecCode() {
-    return secCode;
+    return orderMap.get("Sec_Code");
   }
   String getTradeDir() {
-    return tradeDir;
+    return orderMap.get("Trade_Dir");
   }
 
   String getKey(String key) {
@@ -80,20 +80,20 @@ class Order {
 
   String objToString() {
     StringBuilder messageBuilder = new StringBuilder();
-    messageBuilder.append(orderNo).append("|");
-    messageBuilder.append(tranMaintCode).append("|");
-    messageBuilder.append(orderPrice).append("|");
-    messageBuilder.append(orderExecVol).append("|");
-    messageBuilder.append(orderVol).append("|");
-    messageBuilder.append(secCode).append("|");
-    messageBuilder.append(tradeDir);
+    messageBuilder.append(orderMap.get("Order_No")).append("|");
+    messageBuilder.append(orderMap.get("Tran_Maint_Code")).append("|");
+    messageBuilder.append(orderMap.get("Order_Price")).append("|");
+    messageBuilder.append(orderMap.get("Order_Exec_Vol")).append("|");
+    messageBuilder.append(orderMap.get("Order_Vol")).append("|");
+    messageBuilder.append(orderMap.get("Sec_Code")).append("|");
+    messageBuilder.append(orderMap.get("Trade_Dir"));
     return messageBuilder.toString();
     // return String.join("|", this.orderList);
   }
 
   public boolean updateOrder(int otherOrderVol) {
-    orderVol = (this.getOrderVol() - otherOrderVol) + "";
-    orderExecVol = (this.getOrderExecVol() + otherOrderVol) + "";
+    orderMap.put("Order_Vol", (this.getOrderVol() - otherOrderVol) + "");
+    orderMap.put("Order_Exec_Vol", (this.getOrderExecVol() + otherOrderVol) + "");
     return true;
   }
 }
