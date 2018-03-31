@@ -34,14 +34,16 @@ class Order {
     //String[] orderList = tuple.split("\\|");
     String orderNo = new String(tuple.split("\\|")[Order_No]);
     String tranMaintCode = new String(tuple.split("\\|")[Tran_Maint_Code]);
+    orderMap.put("Order_No", orderNo);
+    orderMap.put("Tran_Maint_Code", tranMaintCode);
     if (!tranMaintCode.equals("")) {
       // orderPrice = new String(tuple.split("\\|")[Order_Price]);
       // orderExecVol = new String(tuple.split("\\|")[Order_Exec_Vol]);
       // orderVol = new String(tuple.split("\\|")[Order_Vol]);
       // secCode = new String(tuple.split("\\|")[Sec_Code]);
       // tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
-      orderMap.put("Order_No", orderNo);
-      orderMap.put("Tran_Maint_Code", tranMaintCode);
+      // orderMap.put("Order_No", orderNo);
+      // orderMap.put("Tran_Maint_Code", tranMaintCode);
       orderMap.put("Order_Price", new String(tuple.split("\\|")[Order_Price]);
       orderMap.put("Order_Exec_Vol", new String(tuple.split("\\|")[Order_Exec_Vol]));
       orderMap.put("Order_Vol", new String(tuple.split("\\|")[Order_Vol]));
