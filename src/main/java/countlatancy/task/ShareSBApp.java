@@ -440,7 +440,34 @@ public class ShareSBApp implements StreamApplication {
         @Override
         public String toString() {
             // TODO: format output
-            return String.format("Stats {totalTradeNum:%d\n, countList:%s\n, deleteOrder:%s}", totalTradeNum, countList, avgPriceList);
+            return String.format("Stats {totalTradeNum:%d\n, countList:%s\n, deleteOrder:%s}", 
+              totalTradeNum, mapToString1(countList), mapToString2(avgPriceList));
+        }
+        public String mapToString1(Map<String, Integer> map) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String key : map.keySet()) {
+              if (stringBuilder.length() > 0) {
+                  stringBuilder.append(",");
+              }
+              String value = String.valueOf(map.get(key));
+              stringBuilder.append((key);
+              stringBuilder.append(":");
+              stringBuilder.append(value);
+            }
+            return stringBuilder.toString();
+        }
+        public String mapToString2(Map<String, Double> map) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String key : map.keySet()) {
+              if (stringBuilder.length() > 0) {
+                  stringBuilder.append(",");
+              }
+              String value = String.valueOf(map.get(key));
+              stringBuilder.append((key);
+              stringBuilder.append(":");
+              stringBuilder.append(value);
+            }
+            return stringBuilder.toString();
         }
     }
 
