@@ -44,7 +44,7 @@ class Order {
       // tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
       // orderMap.put("Order_No", orderNo);
       // orderMap.put("Tran_Maint_Code", tranMaintCode);
-      orderMap.put("Order_Price", new String(tuple.split("\\|")[Order_Price]);
+      orderMap.put("Order_Price", new String(tuple.split("\\|")[Order_Price]));
       orderMap.put("Order_Exec_Vol", new String(tuple.split("\\|")[Order_Exec_Vol]));
       orderMap.put("Order_Vol", new String(tuple.split("\\|")[Order_Vol]));
       orderMap.put("Sec_Code", new String(tuple.split("\\|")[Sec_Code]));
