@@ -375,14 +375,15 @@ public class ShareSBApp implements StreamApplication {
     private static class stockStats {
         String stockId = new String();
         int totalVol = 0;
-        String tradePrice = new String();
+        float tradePrice = 0;
+        float totalPrice = 0;
         @Override
         public String toString() {
             // TODO: format output
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("{\"stockId\":\"").append(stockId).append("\",")
                           .append("\"totalVol\":\"").append(String.valueOf(totalVol)).append("\",")
-                          .append("\"tradePrice\":\"").append(tradePrice).append("\"}");
+                          .append("\"tradePrice\":\"").append(String.valueOf(tradePrice)).append("\"}");
             return messageBuilder.toString();
         }
     }
@@ -412,7 +413,8 @@ public class ShareSBApp implements StreamApplication {
         public stockStats apply(List<String> tradeResult, stockStats stats) {
             stats.stockId = tradeResult.get(0);
             stats.totalVol += Integer.parseInt(tradeResult.get(1));
-            stats.tradePrice = tradeResult.get(2);
+            stats.totalPrice += Integer.parseInt(tradeResult.get(1))*Float.parseFloat(tradeResult.get(2));
+            stats.tradePrice = stats.totalPrice/stats.totalVol;
             return stats;
         }
     }
