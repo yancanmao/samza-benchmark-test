@@ -34,6 +34,7 @@ public class ShareSBApp implements StreamApplication {
 
         String windowInterval = config.get("windowInterval", "3");
         String groupByKey = config.get("groupByKey", "Sec_Code");
+        String stockId = config.get("stockId", "600300");
 
         MessageStream<String> orderStream = graph.<String, String, String>getInputStream(INPUT_TOPIC, (k, v) -> v);
 
@@ -70,10 +71,8 @@ public class ShareSBApp implements StreamApplication {
           .map((order)->{
               return this.mapFunction(pool, poolPrice, order);
           })
-          .filter((completeOrder) -> !completeOrder.isEmpty())
-          // .map((completeOrder) -> {
-          //     return this.listToString(completeOrder);
-          // })
+          .filter((tradeResult) -> !tradeResult.isEmpty())
+          .filter((tradeResult) -> !tradeResult.get(0).equals(stockId))
           .window(Windows.tumblingWindow(Duration.ofSeconds(Long.parseLong(windowInterval)), stockStats::new, new stockStatsAggregator(groupByKey)))
           .map(this::formatOutput)
           .sendTo(outputStream);
@@ -84,7 +83,7 @@ public class ShareSBApp implements StreamApplication {
      * @param poolB,poolS,pool,order
      * @return output string 
      */
-    public List<Order> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
+    public List<String> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
                               List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
                               Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
@@ -93,29 +92,18 @@ public class ShareSBApp implements StreamApplication {
         int j = 0;
         int otherOrderVol;
         int totalVol = 0;
-        List<Order> completeOrder = new ArrayList<>();
-        // StringBuilder messageBuilder = new StringBuilder();
-        // messageBuilder.append("{\"process_no\":\"0\", \"deal\":{");
-        // List<Order> completeB = new ArrayList<>();
+        float tradePrice = 0;
+        List<String> tradeResult = new ArrayList<>();
         while (poolPriceS.get(top) <= poolPriceB.get(top)) {
+            tradePrice = poolPriceS.get(top);
             if (poolB.get(poolPriceB.get(top)).get(top).getOrderVol() > poolS.get(poolPriceS.get(top)).get(top).getOrderVol()) {
                 // B remains B_top-S_top
                 otherOrderVol = poolS.get(poolPriceS.get(top)).get(top).getOrderVol();
                 // totalVol sum
-                // totalVol += otherOrderVol;
+                totalVol += otherOrderVol;
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 // S complete
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
-                // add j to complete list
-                // complete.add(poolS.get(j).getOrderNo());
-                // messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
-                //               .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
-                //               .append("\"").append(",");
-                // messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
-                //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
-                //               .append("\"").append(",");
-                completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
-                // completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 // remove top of poolS
                 poolS.get(poolPriceS.get(top)).remove(top);
                 // no order in poolS, transaction over
@@ -131,20 +119,9 @@ public class ShareSBApp implements StreamApplication {
             } else {
                 otherOrderVol = poolB.get(poolPriceB.get(top)).get(top).getOrderVol();
                 // totalVol sum
-                // totalVol += otherOrderVol;
+                totalVol += otherOrderVol;
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
                 poolS.get(poolPriceS.get(top)).get(top).updateOrder(otherOrderVol);
-                // add top to complete list
-                // complete.add(poolB.get(i).getOrderNo());
-                // messageBuilder.append(poolB.get(i).getOrderNo()).append(" ");
-                // messageBuilder.append("\"").append(poolS.get(poolPriceS.get(top)).get(top).getOrderNo()).append("\"")
-                //               .append(":").append("\"").append(poolS.get(poolPriceS.get(top)).get(top).objToString())
-                //               .append("\"").append(",");
-                // messageBuilder.append("\"").append(poolB.get(poolPriceB.get(top)).get(top).getOrderNo()).append("\"")
-                //               .append(":").append("\"").append(poolB.get(poolPriceB.get(top)).get(top).objToString())
-                //               .append("\"").append(",");
-                // completeOrder.add(poolS.get(poolPriceS.get(top)).get(top));
-                completeOrder.add(poolB.get(poolPriceB.get(top)).get(top));
                 poolB.get(poolPriceB.get(top)).remove(top);
                 // no order in poolB, transaction over
                 if (poolB.get(poolPriceB.get(top)).isEmpty()) {
@@ -157,18 +134,15 @@ public class ShareSBApp implements StreamApplication {
                 // TODO: output poolB poolS price etc
             }
         }
-        // messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        // messageBuilder.append("},");
         pool.put(order.getSecCode()+"S", poolS);
         pool.put(order.getSecCode()+"B", poolB);
         poolPrice.put(order.getSecCode()+"B", poolPriceB);
         poolPrice.put(order.getSecCode()+"S", poolPriceS);
-        // add totalVol
-        // messageBuilder.append("\"total_vol\":").append(totalVol);
-        // messageBuilder.append("}");
-        // output complete order
-        // return messageBuilder.toString();
-        return completeOrder;
+        tradeResult.add(order.getSecCode());
+        tradeResult.add(String.valueOf(totalVol));
+        tradeResult.add(String.valueOf(tradePrice));
+        // return tradeResult;
+        return tradeResult;
     }
 
     /**
@@ -222,9 +196,9 @@ public class ShareSBApp implements StreamApplication {
      * @param pool, order
      * @return String
      */
-    public List<Order> mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
+    public List<String> mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
         // String complete = new String();
-        List<Order> completeOrder = new ArrayList<>();
+        List<String> tradeResult = new ArrayList<>();
         // load poolS poolB
         Map<Float, List<Order>> poolS = pool.get(order.getSecCode()+"S");
         Map<Float, List<Order>> poolB = pool.get(order.getSecCode()+"B");
@@ -251,7 +225,7 @@ public class ShareSBApp implements StreamApplication {
                 String orderNo = order.getOrderNo();
                 if (BorderList == null) {
                     // return "{\"process_no\":\"11\", \"result\":\"no such B order to delete:" + orderNo+"\"}";
-                    return completeOrder;
+                    return tradeResult;
                 }
                 for (int i=0; i < BorderList.size(); i++) {
                     if (orderNo.equals(BorderList.get(i).getOrderNo())) {
@@ -270,13 +244,11 @@ public class ShareSBApp implements StreamApplication {
                         }
                         poolPrice.put(order.getSecCode()+"B", poolPriceB);
                         pool.put(order.getSecCode()+"B", poolB);
-                        // return "{\"process_no\":\"10\", \"result\":\"delete B order:" + orderNo+"\"}";
-                        return completeOrder;
+                        return tradeResult;
                     }
                 }
                 // else output no delete order exist
-                // return "{\"process_no\":\"11\", \"result\":\"no such B order to delete:" + orderNo+"\"}";
-                return completeOrder;             
+                return tradeResult;             
              }
             
             // put into buy poolB
@@ -305,9 +277,8 @@ public class ShareSBApp implements StreamApplication {
             if (poolPriceS.isEmpty()) {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                // complete = "{\"process_no\":\"2\", \"result\":\"empty poolS, no transaction\"}";
                 // return complete;
-                return completeOrder;             
+                return tradeResult;             
             }
 
             // no satisfied price
@@ -317,10 +288,9 @@ public class ShareSBApp implements StreamApplication {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                // complete = "{\"process_no\":\"3\", \"result\":\"no price match, no transaction\"}";
-                return completeOrder;
+                return tradeResult;
             } else {
-                completeOrder = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
+                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         } else if (order.getTradeDir().equals("S")) {
             float orderPrice = order.getOrderPrice();
@@ -330,8 +300,7 @@ public class ShareSBApp implements StreamApplication {
                 // if exist in order, remove from pool
                 String orderNo = order.getOrderNo();
                 if (SorderList == null) {
-                    // return "{\"process_no\":\"11\", \"result\":\"no such S order to delete:" + orderNo+"\"}";
-                    return completeOrder;
+                    return tradeResult;
                 }
                 for (int i=0; i < SorderList.size(); i++) {
                     if (orderNo.equals(SorderList.get(i).getOrderNo())) {
@@ -350,13 +319,11 @@ public class ShareSBApp implements StreamApplication {
                         }
                         poolPrice.put(order.getSecCode()+"S", poolPriceS);
                         pool.put(order.getSecCode()+"S", poolS);
-                        // return "{\"process_no\":\"10\", \"result\":\"delete S order:" + orderNo+"\"}";
-                        return completeOrder;
+                        return tradeResult;
                     }
                 }
                 // else output no delete order exist
-                // return "{\"process_no\":\"11\", \"result\":\"no such S order to delete:" + orderNo+"\"}";
-                return completeOrder;
+                return tradeResult;
             }
             
             // put into buy poolS
@@ -384,9 +351,7 @@ public class ShareSBApp implements StreamApplication {
             if (poolPriceB.isEmpty()) {
                 pool.put(order.getSecCode()+"S", poolS);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
-                // complete = "{\"process_no\":\"2\", \"result\":\"empty poolB, no transaction\"}";
-                // return complete;
-                return completeOrder;
+                return tradeResult;
             }
             
             // no satisfied price
@@ -396,78 +361,29 @@ public class ShareSBApp implements StreamApplication {
                 pool.put(order.getSecCode()+"B", poolB);
                 poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 poolPrice.put(order.getSecCode()+"B", poolPriceB);
-                // complete = "{\"process_no\":\"3\", \"result\":\"no price match, no transaction\"}";
-                return completeOrder;
+                return tradeResult;
             } else {
-                completeOrder = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
+                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         }
-        return completeOrder;
-    }
-
-    /**
-     * listToString
-     * @param completeOrder
-     * @return String
-     */
-    public String listToString(List<Order> completeOrder) {
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("{\"deal\":{");
-        for (int i=0; i < completeOrder.size(); i++) {
-            messageBuilder.append("\"").append(completeOrder.get(i).getOrderNo()).append("\"")
-                          .append(":").append("\"").append(completeOrder.get(i).objToString())
-                          .append("\"").append(",");
-        }
-        messageBuilder.deleteCharAt(messageBuilder.length()-1);
-        messageBuilder.append("}");
-        messageBuilder.append("}");
-        // output complete order
-        return messageBuilder.toString();
+        return tradeResult;
     }
 
     /**
      * A few statistics about the incoming messages.
      */
     private static class stockStats {
-        int totalTradeNum = 0;
-        float minimum = 0;
-        // String tradeOrder = new String();
-        // String deleteOrder = new String();
-        Map<String, Integer> countList = new HashMap<String, Integer>();
-        Map<String, Float> avgPriceList = new HashMap<String, Float>();
-        // String countList = new String(); 
-        // String avgPriceList = new String(); 
+        String stockId = new String();
+        int totalVol = 0;
+        float tradePrice = 0;
         @Override
         public String toString() {
             // TODO: format output
-            return String.format("Stats {totalTradeNum:%d\n, countList:%s\n, averageOrder:%s}",
-              totalTradeNum, mapToString1(countList), mapToString2(avgPriceList));
-        }
-        public String mapToString1(Map<String, Integer> map) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String key : map.keySet()) {
-              if (stringBuilder.length() > 0) {
-                  stringBuilder.append(",");
-              }
-              String value = String.valueOf(map.get(key));
-              stringBuilder.append(key);
-              stringBuilder.append(":");
-              stringBuilder.append(value);
-            }
-            return stringBuilder.toString();
-        }
-        public String mapToString2(Map<String, Float> map) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String key : map.keySet()) {
-              if (stringBuilder.length() > 0) {
-                  stringBuilder.append(",");
-              }
-              String value = String.valueOf(map.get(key));
-              stringBuilder.append(key);
-              stringBuilder.append(":");
-              stringBuilder.append(value);
-            }
-            return stringBuilder.toString();
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("{\"stockId\":\"").append(stockId).append("\",")
+                          .append("\"totalVol\":\"").append(String.valueOf(totalVol)).append("\",")
+                          .append("\"tradePrice\":\"").append(String.valueOf(tradePrice)).append("\"}");
+            return messageBuilder.toString();
         }
     }
 
@@ -490,160 +406,15 @@ public class ShareSBApp implements StreamApplication {
         @Override
         public void init(Config config, TaskContext context) {
             // TODO: analyse if need these factor
-            // store = (KeyValueStore<String, Integer>) context.getStore(STATS_STORE_NAME);
-            // repeatEdits = context.getMetricsRegistry().newCounter("edit-counters", "repeat-edits");
         }
 
         @Override
-        public stockStats apply(List<Order> completeOrder, stockStats stats) {
-            // TODO: group method most to traverse the whole completeOrder
-            // Map<String, List<Order>> groupRes = groupBy(completeOrder, this.key, stats);
-            // TODO: according to group result, do statistics
-            // stats.totalTradeNum += tradeNum(groupRes);
-            // stats.countList = count(groupRes);
-            // stats.avgPriceList = averagePrice(groupRes);
-            // stats.minimum = minimum(groupRes);
-            String orderKey = new String();
-            int count = 0;
-            //int tradeNum = 0;
-            float averagePrice = 0;
-            for (int i=0; i < completeOrder.size(); i++) {
-                if ((orderKey = completeOrder.get(i).getKey(key)) == null) {
-                    continue;
-                }
-                // order count by key
-                if (stats.countList.get(orderKey) != null) {
-                    count = stats.countList.get(orderKey);
-                } else {
-                    count = 0;
-                }
-                count++;
-                stats.countList.put(orderKey, count);
-                // tradeNum aggregate
-                if (completeOrder.get(i).getOrderVol() == 0) {
-                    stats.totalTradeNum += completeOrder.get(i).getOrderExecVol();
-                }
-                // average order price
-                if (stats.avgPriceList.get(orderKey) != null) {
-                    averagePrice = stats.avgPriceList.get(orderKey);
-                } else {
-                    averagePrice = 0;
-                }
-                averagePrice += completeOrder.get(i).getOrderPrice();
-                stats.avgPriceList.put(orderKey, averagePrice);
-            }
+        public stockStats apply(List<String> tradeResult, stockStats stats) {
+            stats.stockId = tradeResult.get(0);
+            stats.totalVol += tradeResult.get(1);
+            stats.tradePrice = tradeResult.get(2);
             return stats;
         }
-        /**
-         * do count\average\minimum\etc in this area,and update stats
-         */
-        // public boolean groupBy(List<Order> completeOrder, String key, stockStats stats){
-        //     int count = 0;
-        //     int tradeNum = 0;
-        //     float averagePrice = 0;
-        //     for (int i=0; i < completeOrder.size(); i++) {
-        //         if ((orderKey = completeOrder.get(i).getKey(key)) == null) {
-        //             continue;
-        //         }
-        //         // order count by key
-        //         if (stats.countList.get(orderKey) != null) {
-        //             count = stats.countList.get(orderKey);
-        //         } else {
-        //             count = 0;
-        //         }
-        //         count++;
-        //         stats.countList.put(orderKey, count);
-        //         // tradeNum aggregate
-        //         if (completeOrder.get(i).getOrderVol() == 0) {
-        //             stats.tradeNum += completeOrder.get(i).getOrderExecVol();
-        //         }
-        //         // average order price
-        //         if (stats.avgPriceList.get(orderKey) != null) {
-        //             averagePrice = stats.avgPriceList.get(orderKey);
-        //         } else {
-        //             averagePrice = 0;
-        //         }
-        //         averagePrice += completeOrder.get(i).getOrderPrice();
-        //         stats.avgPriceList.put(orderKey, averagePrice);
-        //     }
-        // }
-
-        // public Map<String, List<Order>> groupBy(List<Order> completeOrder, String key, stockStats stats){
-        //     Map<String, List<Order>> groupMap = new HashMap<String, List<Order>>();
-        //     String orderKey = new String();
-        //     List<Order> orderList = new ArrayList<>();
-        //     //  construct gourpMap
-        //     for (int i=0; i < completeOrder.size(); i++) {
-        //         if ((orderKey = completeOrder.get(i).getKey(key)) == null) {
-        //             continue;
-        //         }
-        //         if (groupMap.get(orderKey) != null) {
-        //             orderList = groupMap.get(orderKey);
-        //         } else {
-        //             orderList = new ArrayList<>();
-        //         }
-        //         orderList.add(completeOrder.get(i));
-        //         groupMap.put(orderKey, orderList);
-        //     }
-        //     return groupMap;
-        // }
-
-        // public String count(Map<String, List<Order>> groupRes){
-        //     // Map<String, Integer> countList = new HashMap<String, Integer>();
-        //     StringBuilder messageBuilder = new StringBuilder();
-        //     for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-        //         // countList.put(entry.getKey(), entry.getValue().size());
-        //         messageBuilder.append(entry.getKey()).append(":").append(String.valueOf(entry.getValue().size())).append(";");
-        //     }
-        //     return messageBuilder.toString();
-        // }
-
-        // public Integer tradeNum(Map<String, List<Order>> groupRes){
-        //     int orderNum = 0;
-        //     for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-        //         for (int i=0; i < entry.getValue().size(); i++) {
-        //             if (entry.getValue().get(i).getOrderVol() != 0) {
-        //                 continue;
-        //             }
-        //             orderNum += entry.getValue().get(i).getOrderExecVol();
-        //         }
-        //     }
-        //     return orderNum;
-        // }
-
-        // public float minimum(Map<String, List<Order>> groupRes){
-        //     float min = new Float(10000);
-        //     for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-        //         for (int i=0; i < entry.getValue().size(); i++) {
-        //             if (entry.getValue().get(i).getOrderPrice() < min) {
-        //                 min = entry.getValue().get(i).getOrderPrice();
-        //             }
-        //         }
-        //     }
-        //     return min;
-        // }
-
-        // TODO: orderVol logic is not good enough to represent transaction volume
-        // public String averagePrice(Map<String, List<Order>> groupRes){
-        //     // Map<String, Double> avgPriceList = new HashMap<String, Double>();
-        //     StringBuilder messageBuilder = new StringBuilder();
-        //     double totalOrderPrice = 0;
-        //     int totalOrderVol = 0;
-        //     for (Map.Entry<String, List<Order>> entry : groupRes.entrySet()) {
-        //         totalOrderPrice = 0;
-        //         totalOrderVol = 0;
-        //         for (int i=0; i < entry.getValue().size(); i++) {
-        //             if (entry.getValue().get(i).getOrderVol() != 0) {
-        //                 continue;
-        //             }
-        //             totalOrderVol += entry.getValue().get(i).getOrderExecVol();
-        //             totalOrderPrice += entry.getValue().get(i).getOrderPrice() * entry.getValue().get(i).getOrderExecVol();
-        //         }
-        //         // avgPriceList.put(entry.getKey() , totalOrderPrice/totalOrderVol);
-        //         messageBuilder.append(entry.getKey()).append(":").append(String.valueOf(totalOrderPrice/totalOrderVol)).append(";");
-        //     }
-        //     return messageBuilder.toString();
-        // }
     }
 
     /**
