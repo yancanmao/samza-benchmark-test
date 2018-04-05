@@ -72,7 +72,7 @@ public class ShareSBApp implements StreamApplication {
               return this.mapFunction(pool, poolPrice, order);
           })
           .filter((tradeResult) -> !tradeResult.isEmpty())
-          .filter((tradeResult) -> !tradeResult.get(0).equals(stockId))
+          .filter((tradeResult) -> tradeResult.get(0).equals(stockId))
           .window(Windows.tumblingWindow(Duration.ofSeconds(Long.parseLong(windowInterval)), stockStats::new, new stockStatsAggregator(groupByKey)))
           .map(this::formatOutput)
           .sendTo(outputStream);
@@ -375,14 +375,14 @@ public class ShareSBApp implements StreamApplication {
     private static class stockStats {
         String stockId = new String();
         int totalVol = 0;
-        float tradePrice = 0;
+        String tradePrice = new String();
         @Override
         public String toString() {
             // TODO: format output
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("{\"stockId\":\"").append(stockId).append("\",")
                           .append("\"totalVol\":\"").append(String.valueOf(totalVol)).append("\",")
-                          .append("\"tradePrice\":\"").append(String.valueOf(tradePrice)).append("\"}");
+                          .append("\"tradePrice\":\"").append(tradePrice).append("\"}");
             return messageBuilder.toString();
         }
     }
@@ -395,7 +395,7 @@ public class ShareSBApp implements StreamApplication {
      * 4. compute average price
      * 5. get minimum price\trade number
      */
-    private class stockStatsAggregator implements FoldLeftFunction<List<Order>, stockStats> {
+    private class stockStatsAggregator implements FoldLeftFunction<List<String>, stockStats> {
 
         private String key = new String();
         
@@ -411,7 +411,7 @@ public class ShareSBApp implements StreamApplication {
         @Override
         public stockStats apply(List<String> tradeResult, stockStats stats) {
             stats.stockId = tradeResult.get(0);
-            stats.totalVol += tradeResult.get(1);
+            stats.totalVol += Integer.parseInt(tradeResult.get(1));
             stats.tradePrice = tradeResult.get(2);
             return stats;
         }
