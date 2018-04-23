@@ -413,7 +413,11 @@ public class ShareSBApp implements StreamApplication {
         public stockStats apply(List<String> tradeResult, stockStats stats) {
             stats.stockId = tradeResult.get(0);
             stats.totalVol += Integer.parseInt(tradeResult.get(1));
-            stats.totalPrice += Integer.parseInt(tradeResult.get(1))*Float.parseFloat(tradeResult.get(2));
+            if (Float.parseFloat(tradeResult.get(2)) != 0) {
+                stats.totalPrice += Integer.parseInt(tradeResult.get(1))*Float.parseFloat(tradeResult.get(2));
+            } else {
+                stats.totalPrice += Integer.parseInt(tradeResult.get(1))*6.4;
+            }
             stats.tradePrice = stats.totalPrice/stats.totalVol;
             return stats;
         }
