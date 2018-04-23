@@ -39,7 +39,7 @@ import java.io.*;
 public class ShareSBApp implements StreamApplication {
 
     // private static final Logger LOG = LoggerFactory.getLogger(TumblingPageViewCounterApp.class);
-    private static final String INPUT_TOPIC = "FileToStream";
+    private static final String INPUT_TOPIC = "FileToStream3";
     private static final String OUTPUT_TOPIC = "ShareSB";
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
